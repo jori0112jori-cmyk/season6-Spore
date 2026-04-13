@@ -1,1 +1,1 @@
-# season6-Spore
+# season6-真菌研究所Lvアップに必要な胞子生産時間の計算
