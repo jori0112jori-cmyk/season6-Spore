@@ -1,0 +1,434 @@
+:root {
+    /* 配色設定 */
+    --c-primary: #4E342E;
+    --c-bg:      #EFEBE9;
+    --c-card:    #FFFFFF;
+    --c-text:    #3E2723;
+    --c-border:  #D7CCC8;
+    --c-accent:  #BF360C;
+    --c-btn:     #8D6E63;
+    --c-shadow:  rgba(62, 39, 35, 0.1);
+}
+
+/* --- Base Styles --- */
+body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--c-bg);
+    color: var(--c-text);
+    margin: 0;
+    padding: 15px;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+}
+
+.container { max-width: 600px; margin: 0 auto; padding-bottom: 80px; }
+
+/* --- Utility Classes --- */
+.mb-sm { margin-bottom: 8px; }
+.mb-md { margin-bottom: 12px; }
+.mb-lg { margin-bottom: 20px; }
+.text-center { text-align: center; }
+
+/* --- Typography --- */
+h1 { font-size: 1.2rem; color: var(--c-primary); margin: 0; line-height: 1.2; }
+.subtitle { font-size: 0.75rem; color: #5D4037; font-weight: normal; display: block; }
+
+h2 { 
+    font-size: 1rem; margin: 0 0 12px 0; color: var(--c-primary); 
+    border-bottom: 2px solid var(--c-border); padding-bottom: 6px; 
+    display: flex; justify-content: space-between; align-items: flex-end; 
+}
+
+.font-mono { font-family: 'Roboto Mono', monospace; }
+.text-accent { color: var(--c-accent); }
+.text-primary { color: var(--c-primary); }
+
+/* --- Components --- */
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+
+.card {
+    background: var(--c-card);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px var(--c-shadow);
+    border: 1px solid var(--c-border);
+}
+
+.card.result-card { background: #EFEBE9; border: 2px solid #8D6E63; box-shadow: 0 4px 12px rgba(62, 39, 35, 0.15); }
+.res-val {
+    font-family: 'Roboto Mono'; font-weight: 700; font-size: 1.1rem; color: var(--c-primary);
+    background: rgba(255,255,255,0.5); 
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* --- Forms & Inputs --- */
+label { 
+    display: block; font-size: 0.9rem; font-weight: bold; color: var(--c-primary);
+    margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+}
+
+/* チェックボックス以外のinputとselect */
+select, input:not([type="checkbox"]) {
+    width: 100%; padding: 12px;
+    border: 1px solid var(--c-border); border-radius: 8px;
+    font-size: 16px; background: #FAFAFA; box-sizing: border-box;
+    color: var(--c-text); appearance: none;
+}
+select:focus, input:not([type="checkbox"]):focus {
+    border-color: var(--c-accent);
+    background: #FFF;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(191, 54, 12, 0.2);
+}
+
+/* チェックボックス専用スタイル */
+input[type="checkbox"] {
+    appearance: auto;           
+    -webkit-appearance: auto;   
+    accent-color: var(--c-accent);
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+/* 保有量入力欄 (#stock) - 上下配置用に修正 */
+#stock {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-align: center;
+    height: 44px;
+    padding: 0 10px;
+    /* 下側の角を直角にして、下のボタンと繋がっているように見せる */
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom: none; /* 下線を消す */
+    margin-bottom: 0;
+}
+#stock::placeholder {
+    font-weight: normal;
+    font-size: 1rem;
+    opacity: 0.6;
+}
+
+/* ★追加: 入力欄とツールボタンのグルーピング */
+.stock-input-group {
+    display: flex;
+    flex-direction: column; /* 縦に積む */
+}
+
+/* ボタン群のラッパー */
+.stock-tools {
+    display: flex;
+    width: 100%;
+}
+
+.unit-btn {
+    flex: 1; /* 3等分 */
+    height: 40px;
+    background: #D7CCC8;
+    color: #5D4037;
+    border: 1px solid #A1887F;
+    border-right: none; /* 隣り合う線の重複を防ぐ */
+    font-weight: bold;
+    font-family: 'Roboto Mono', monospace;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s;
+    font-size: 1rem;
+}
+/* 左下の角を丸く */
+.unit-btn:first-child {
+    border-bottom-left-radius: 8px;
+}
+/* 右下の角を丸く、右線を復活 */
+.unit-btn:last-child {
+    border-bottom-right-radius: 8px;
+    border-right: 1px solid #A1887F;
+}
+
+.unit-btn:hover { background: #BCAAA4; }
+.unit-btn:active { background: #8D6E63; color: #FFF; }
+
+/* 削除ボタンを少し強調 */
+.del-btn {
+    font-size: 1.2rem;
+    color: #8D6E63;
+}
+
+
+/* --- Grid Layouts --- */
+.grid { display: grid; gap: 12px; }
+.cols-2 { grid-template-columns: 1fr 1fr; }
+.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.mt-md { margin-top: 15px; }
+
+@media (max-width: 600px) {
+    .cols-4 { grid-template-columns: 1fr 1fr; }
+}
+
+/* --- Values & Results --- */
+.res-row { 
+    display: flex; justify-content: space-between; align-items: center; 
+    padding: 6px 0; border-bottom: 1px dashed rgba(62, 39, 35, 0.15); 
+}
+.res-row:last-child { border: none; }
+
+.highlight-box {
+    background: #FFF; border-radius: 8px; padding: 15px; text-align: center;
+    margin-top: 12px; border: 2px solid var(--c-accent);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+
+.big-time { 
+    font-size: 2.6rem; font-weight: 900; color: var(--c-accent); 
+    line-height: 1; margin: 2px 0 0 0; letter-spacing: -1px;
+}
+.big-date { font-size: 1.2rem; font-weight: bold; color: #5D4037; margin-bottom: 8px; }
+
+.shortage-area {
+    background: #FBE9E7; border-radius: 6px; padding: 6px 12px;
+    display: flex; align-items: baseline; gap: 6px; color: var(--c-accent);
+}
+
+/* --- Buttons --- */
+.btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.btn { padding: 12px; border: none; border-radius: 8px; font-weight: bold; color: #fff; cursor: pointer; font-size: 0.9rem; transition: transform 0.1s, box-shadow 0.1s; }
+.btn-save { background: var(--c-primary); }
+.btn-reset { background: var(--c-btn); }
+
+/* クリック時のアニメーション */
+.btn:active, .step-btn:active, .buff-chip:active, .tab-item:active, .unit-btn:active {
+    transform: scale(0.96);
+    transition: transform 0.05s ease;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.time-wrapper { display: flex; gap: 8px; }
+.btn-now {
+    background: var(--c-primary); color: white; border: none; border-radius: 8px;
+    padding: 0 12px; font-weight: bold; cursor: pointer; font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+/* --- Language Switcher --- */
+.lang-switch { display: flex; gap: 12px; }
+.flag-icon { 
+    width: 36px; height: auto; cursor: pointer; opacity: 0.4; 
+    filter: grayscale(100%); transition: all 0.2s ease; 
+    border-radius: 4px; border: 2px solid transparent;
+}
+.flag-icon.active { 
+    opacity: 1; filter: grayscale(0%); transform: scale(1.1); 
+    border-color: var(--c-primary);
+}
+.unit { font-size: 0.8em; font-weight: normal; margin-left: 1px; }
+
+/* =========================================
+   ステッパー & バフボタン用 UI
+   ========================================= */
+
+/* ステッパー */
+.stepper-ctrl {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.step-btn {
+    width: 44px;
+    height: 44px;
+    background: #EFEBE9;
+    border: 1px solid var(--c-btn);
+    color: var(--c-primary);
+    font-size: 1.5rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    transition: background 0.1s;
+}
+
+.step-display {
+    flex: 1;
+    display: flex;
+    align-items: baseline; 
+    justify-content: center;
+    background: #FFF;
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    min-height: 44px;
+    padding: 10px 5px;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 1.1rem;
+    cursor: default;
+    user-select: none;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+/* 数値表示用 */
+.sub-label {
+    font-size: 0.8rem;
+    color: #8D6E63;
+    margin-right: 4px;
+    font-weight: bold;
+}
+.sub-sep {
+    display: inline-block;
+    width: 12px;
+}
+
+.val-lv { font-weight: bold; color: #3E2723; }
+.val-res { font-weight: bold; color: #007AFF; }
+.val-res.buffed { color: #2E7D32; }
+
+/* バフ選択 (トグルボタン) */
+.buff-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.buff-chip {
+    flex: 1;
+    min-width: 140px; 
+    padding: 16px 10px;
+    background: #FFF;
+    border: 1px solid var(--c-border);
+    border-radius: 30px; 
+    color: var(--c-text);
+    font-weight: bold;
+    font-size: 1.1rem;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    user-select: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* コーヒーボタンの強調 */
+#btn-buff-250 span, #btn-buff-500 span {
+    font-size: 1.1rem;
+    font-weight: 900;
+}
+
+/* スキルボタンの文字サイズ調整 */
+#btn-skill span {
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.buff-chip.active {
+    background: #007AFF; 
+    border-color: #007AFF;
+    color: #FFF;
+    box-shadow: 0 3px 8px rgba(0, 122, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+/* --- 非活性化状態 --- */
+.disabled-item {
+    opacity: 0.4;
+    pointer-events: none;
+    filter: grayscale(100%);
+}
+
+/* --- 討伐判定結果 --- */
+.battle-result-box {
+    margin-top: 12px;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    background: #EEE;
+    border: 2px solid #CCC;
+    color: #555;
+    font-family: 'Roboto Mono', monospace;
+    line-height: 1.6;
+}
+.battle-result-box.win {
+    background: #E8F5E9;
+    border-color: #2E7D32;
+    color: #2E7D32;
+}
+.battle-result-box.lose {
+    background: #FFEBEE;
+    border-color: #C62828;
+    color: #C62828;
+}
+
+/* --- タブメニュー用CSS --- */
+.tab-menu {
+    display: flex;
+    gap: 5px;
+}
+.tab-item {
+    flex: 1;
+    padding: 12px;
+    background: #D7CCC8;
+    border: none;
+    border-radius: 8px 8px 0 0;
+    font-weight: bold;
+    color: #5D4037;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    border-bottom: 3px solid transparent;
+}
+.tab-item.active {
+    background: #FFF;
+    color: #BF360C;
+    border-bottom: 3px solid #BF360C;
+}
+.tab-content {
+    animation: fadein 0.3s;
+}
+@keyframes fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* --- 強化設定エリア --- */
+.bonus-area {
+    background: #F5F5F5;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+/* --- 討伐可能ライン表示ボックス --- */
+.max-win-box {
+    background: #E8F5E9;
+    border: 1px solid #2E7D32;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+.max-win-box .label {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #2E7D32;
+    margin-bottom: 6px;
+}
+.max-win-box .value {
+    display: flex;
+    align-items: baseline; 
+    justify-content: center;
+    font-family: 'Roboto Mono', monospace;
+    gap: 15px; /* ★ここを追加: 要素同士の間隔を広げる */
+}
