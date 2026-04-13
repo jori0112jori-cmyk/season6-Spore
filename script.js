@@ -127,7 +127,7 @@ const app = (() => {
             loadMasterData();
             const maxDataLv = DATA.COSTS.findLastIndex(n => n > 0);
             const subTitle = document.querySelector('.subtitle');
-            if(subTitle) subTitle.textContent = `LastWar S5 Coffee Calc (Data: Lv.${maxDataLv})`;
+            if(subTitle) subTitle.textContent = `LastWar S6 Spore Calc (Data: Lv.${maxDataLv})`;
             
             lang = localStorage.getItem('s5_lang') || 'ja';
             renderUI();
