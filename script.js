@@ -14,7 +14,7 @@ const app = (() => {
             if (typeof DEFAULT_MASTER_DATA === 'undefined') throw new Error("data.js not found");
             DATA = JSON.parse(JSON.stringify(DEFAULT_MASTER_DATA));
             
-            // 1. 工場の入力欄を生成（これがないと日産が計算されません）
+            // 1. 工場エリアの生成
             renderFactories();
 
             // 2. データの復元
@@ -24,18 +24,17 @@ const app = (() => {
                 if($('stock')) $('stock').value = s.stock || 0;
                 if($('discount')) $('discount').value = s.disc || 0;
                 // レベルの復元
-                setVal('cur', s.cur || 0);
-                setVal('tgt', s.tgt || 1);
+                updateDisplay('cur', s.cur || 19); // デフォルトを19に設定
+                updateDisplay('tgt', s.tgt || 20); // デフォルトを20に設定
             } else {
-                setVal('cur', 0);
-                setVal('tgt', 1);
+                updateDisplay('cur', 19);
+                updateDisplay('tgt', 20);
             }
             
             calc();
         } catch(e) { console.error("Init Error:", e); }
     };
 
-    // 工場（I～IV）の入力欄を作る関数
     const renderFactories = () => {
         const area = $('factory-area');
         if (!area) return;
@@ -44,17 +43,23 @@ const app = (() => {
             const div = document.createElement('div');
             div.innerHTML = `
                 <label>工場 ${i}</label>
-                <input type="number" id="fac-${i}" value="0" min="0" max="30" oninput="app.calc()">
+                <input type="number" id="fac-${i}" value="20" min="0" max="30" oninput="app.calc()">
             `;
             area.appendChild(div);
         }
     };
 
-    const setVal = (type, val) => {
+    const updateDisplay = (type, lv) => {
         const dispLv = $('disp-' + type + '-lv');
         const dispRes = $('disp-' + type + '-res');
-        if (dispLv) dispLv.textContent = val;
-        if (dispRes) dispRes.textContent = (DATA.VIRUS[val] || 0).toLocaleString();
+        if (dispLv) dispLv.textContent = lv;
+        if (dispRes) dispRes.textContent = (DATA.VIRUS[lv] || 0).toLocaleString();
+        
+        // 討伐シミュ用
+        if (type === 'cur') {
+            if($('disp-battle-my-lv')) $('disp-battle-my-lv').textContent = lv;
+            if($('disp-battle-my-res')) $('disp-battle-my-res').textContent = (DATA.VIRUS[lv] || 0).toLocaleString();
+        }
     };
 
     const calc = () => {
@@ -63,17 +68,16 @@ const app = (() => {
         const stock = parseInt($('stock')?.value) || 0;
         const disc = (parseFloat($('disp-disc')?.textContent) || 0) / 100;
 
-        // --- 1. 生産量の計算 ---
+        // 1. 生産量の計算 (Base 720 + Lv毎に加算)
         let hourlyProd = 0;
         for (let i = 1; i <= 4; i++) {
             const lv = parseInt($('fac-' + i)?.value) || 0;
-            // 仮の生産量計算式（必要に応じて調整してください）
             if (lv > 0) hourlyProd += (720 + (lv * 50)); 
         }
         if ($('total-prod')) $('total-prod').textContent = hourlyProd.toLocaleString() + '/h';
         if ($('res-daily')) $('res-daily').textContent = (hourlyProd * 24).toLocaleString();
 
-        // --- 2. 必要量の計算 ---
+        // 2. 必要量の合計 (data.js の COSTS を参照)
         let totalCost = 0;
         if (tgt > cur) {
             for (let i = cur; i < tgt; i++) {
@@ -82,7 +86,7 @@ const app = (() => {
         }
         totalCost = Math.floor(totalCost * (1 - disc));
 
-        // --- 3. 画面表示 ---
+        // 3. 表示反映
         if($('res-cost')) $('res-cost').textContent = totalCost.toLocaleString();
         if($('res-virus')) {
             const curV = DATA.VIRUS[cur] || 0;
@@ -92,11 +96,7 @@ const app = (() => {
         
         const short = Math.max(0, totalCost - stock);
         if($('res-short')) $('res-short').textContent = short.toLocaleString();
-
-        // 完了メッセージなど
-        if($('status-msg')) {
-            $('status-msg').textContent = short <= 0 ? "達成済み" : "不足分を生産中";
-        }
+        if($('status-msg')) $('status-msg').textContent = short <= 0 ? "達成済み" : "不足分を計算中";
 
         save();
     };
@@ -114,38 +114,41 @@ const app = (() => {
     window.app = {
         init, calc,
         step: (type, val) => {
-            const dispId = 'disp-' + type + '-lv';
-            const el = $(dispId);
+            const el = $('disp-' + type + '-lv') || $('disp-' + type);
             if(!el) return;
-            let n = parseInt(el.textContent) || 0;
-            const nextVal = Math.max(0, Math.min(CONFIG.MAX_LV, n + val));
+            let n = (type === 'disc') ? parseFloat(el.textContent) : parseInt(el.textContent);
+            let nextVal = n + val;
+            
+            if (type === 'disc') {
+                nextVal = Math.max(0, Math.min(30, nextVal)).toFixed(1);
+            } else {
+                nextVal = Math.max(0, Math.min(CONFIG.MAX_LV, nextVal));
+            }
+            
             el.textContent = nextVal;
-            
-            // 耐性表示も更新
-            const resId = 'disp-' + type + '-res';
-            if($(resId)) $(resId).textContent = (DATA.VIRUS[nextVal] || 0).toLocaleString();
-            
+            if (type === 'cur' || type === 'tgt') updateDisplay(type, nextVal);
             calc();
         },
         addUnit: (unit) => {
             const el = $('stock');
             let val = parseInt(el.value) || 0;
-            if(unit === 'k') el.value = val * 1000;
-            if(unit === 'm') el.value = val * 1000000;
+            if(unit === 'k') el.value = val + 1000;
+            if(unit === 'm') el.value = val + 1000000;
             calc();
         },
+        backspace: () => { $('stock').value = ''; calc(); },
         setNow: () => {
             const now = new Date();
-            if($('now-time')) $('now-time').value = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+            if($('now-time')) $('now-time').value = now.toTimeString().slice(0,5);
             calc();
         },
-        reset: () => { if(confirm('リセットしますか？')){ localStorage.removeItem(CONFIG.SAVE_KEY); location.reload(); }},
         switchTab: (tab) => {
             $('view-main').style.display = tab === 'main' ? 'block' : 'none';
             $('view-battle').style.display = tab === 'battle' ? 'block' : 'none';
             $('tab-btn-main').className = tab === 'main' ? 'tab-item active' : 'tab-item';
             $('tab-btn-battle').className = tab === 'battle' ? 'tab-item active' : 'tab-item';
-        }
+        },
+        reset: () => { if(confirm('リセットしますか？')){ localStorage.clear(); location.reload(); } }
     };
 
     return window.app;
