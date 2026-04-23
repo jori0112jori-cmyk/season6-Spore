@@ -1,19 +1,21 @@
 :root {
-    /* 配色設定 */
-    --c-primary: #4E342E;
-    --c-bg:      #EFEBE9;
-    --c-card:    #FFFFFF;
-    --c-text:    #3E2723;
-    --c-border:  #D7CCC8;
-    --c-accent:  #BF360C;
-    --c-btn:     #8D6E63;
-    --c-shadow:  rgba(62, 39, 35, 0.1);
+    /* シーズン6：Lost Rainforest（熱帯雨林）配色 */
+    --c-primary: #2E7D32;    /* 濃い森林の緑 */
+    --c-bg:      #DCEDC8;    /* 木漏れ日のような明るい緑 */
+    --c-card:    #FFFFFF;    /* カード背景（白） */
+    --c-text:    #1B5E20;    /* テキスト用の深い緑 */
+    --c-border:  #AED581;    /* 苔・植物の緑 */
+    --c-accent:  #EF6C00;    /* 警告・サバイバルオレンジ */
+    --c-btn:     #558B2F;    /* ミリタリーグリーン */
+    --c-shadow:  rgba(27, 94, 32, 0.15); /* 緑がかった影 */
 }
 
 /* --- Base Styles --- */
 body {
     font-family: 'Noto Sans JP', sans-serif;
-    background: var(--c-bg);
+    /* 背景をジャングル風のグラデーションに */
+    background: linear-gradient(180deg, #DCEDC8 0%, #C5E1A5 100%);
+    background-attachment: fixed;
     color: var(--c-text);
     margin: 0;
     padding: 15px;
@@ -31,7 +33,7 @@ body {
 
 /* --- Typography --- */
 h1 { font-size: 1.2rem; color: var(--c-primary); margin: 0; line-height: 1.2; }
-.subtitle { font-size: 0.75rem; color: #5D4037; font-weight: normal; display: block; }
+.subtitle { font-size: 0.75rem; color: #558B2F; font-weight: normal; display: block; }
 
 h2 { 
     font-size: 1rem; margin: 0 0 12px 0; color: var(--c-primary); 
@@ -55,7 +57,7 @@ header { display: flex; justify-content: space-between; align-items: center; mar
     border: 1px solid var(--c-border);
 }
 
-.card.result-card { background: #EFEBE9; border: 2px solid #8D6E63; box-shadow: 0 4px 12px rgba(62, 39, 35, 0.15); }
+.card.result-card { background: #F1F8E9; border: 2px solid #558B2F; box-shadow: 0 4px 12px var(--c-shadow); }
 .res-val {
     font-family: 'Roboto Mono'; font-weight: 700; font-size: 1.1rem; color: var(--c-primary);
     background: rgba(255,255,255,0.5); 
@@ -80,7 +82,7 @@ select:focus, input:not([type="checkbox"]):focus {
     border-color: var(--c-accent);
     background: #FFF;
     outline: none;
-    box-shadow: 0 0 0 3px rgba(191, 54, 12, 0.2);
+    box-shadow: 0 0 0 3px rgba(239, 108, 0, 0.2); /* オレンジのフォーカスリング */
 }
 
 /* チェックボックス専用スタイル */
@@ -102,10 +104,9 @@ input[type="checkbox"] {
     text-align: center;
     height: 44px;
     padding: 0 10px;
-    /* 下側の角を直角にして、下のボタンと繋がっているように見せる */
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
-    border-bottom: none; /* 下線を消す */
+    border-bottom: none; 
     margin-bottom: 0;
 }
 #stock::placeholder {
@@ -114,10 +115,10 @@ input[type="checkbox"] {
     opacity: 0.6;
 }
 
-/* ★追加: 入力欄とツールボタンのグルーピング */
+/* 入力欄とツールボタンのグルーピング */
 .stock-input-group {
     display: flex;
-    flex-direction: column; /* 縦に積む */
+    flex-direction: column;
 }
 
 /* ボタン群のラッパー */
@@ -127,12 +128,12 @@ input[type="checkbox"] {
 }
 
 .unit-btn {
-    flex: 1; /* 3等分 */
+    flex: 1; 
     height: 40px;
-    background: #D7CCC8;
-    color: #5D4037;
-    border: 1px solid #A1887F;
-    border-right: none; /* 隣り合う線の重複を防ぐ */
+    background: #C5E1A5;
+    color: #1B5E20;
+    border: 1px solid #9CCC65;
+    border-right: none; 
     font-weight: bold;
     font-family: 'Roboto Mono', monospace;
     cursor: pointer;
@@ -142,25 +143,19 @@ input[type="checkbox"] {
     transition: background 0.1s;
     font-size: 1rem;
 }
-/* 左下の角を丸く */
-.unit-btn:first-child {
-    border-bottom-left-radius: 8px;
-}
-/* 右下の角を丸く、右線を復活 */
+.unit-btn:first-child { border-bottom-left-radius: 8px; }
 .unit-btn:last-child {
     border-bottom-right-radius: 8px;
-    border-right: 1px solid #A1887F;
+    border-right: 1px solid #9CCC65;
 }
 
-.unit-btn:hover { background: #BCAAA4; }
-.unit-btn:active { background: #8D6E63; color: #FFF; }
+.unit-btn:hover { background: #AED581; }
+.unit-btn:active { background: #558B2F; color: #FFF; }
 
-/* 削除ボタンを少し強調 */
 .del-btn {
     font-size: 1.2rem;
-    color: #8D6E63;
+    color: #558B2F;
 }
-
 
 /* --- Grid Layouts --- */
 .grid { display: grid; gap: 12px; }
@@ -175,7 +170,7 @@ input[type="checkbox"] {
 /* --- Values & Results --- */
 .res-row { 
     display: flex; justify-content: space-between; align-items: center; 
-    padding: 6px 0; border-bottom: 1px dashed rgba(62, 39, 35, 0.15); 
+    padding: 6px 0; border-bottom: 1px dashed var(--c-shadow); 
 }
 .res-row:last-child { border: none; }
 
@@ -189,10 +184,10 @@ input[type="checkbox"] {
     font-size: 2.6rem; font-weight: 900; color: var(--c-accent); 
     line-height: 1; margin: 2px 0 0 0; letter-spacing: -1px;
 }
-.big-date { font-size: 1.2rem; font-weight: bold; color: #5D4037; margin-bottom: 8px; }
+.big-date { font-size: 1.2rem; font-weight: bold; color: #33691E; margin-bottom: 8px; }
 
 .shortage-area {
-    background: #FBE9E7; border-radius: 6px; padding: 6px 12px;
+    background: #FFF3E0; border-radius: 6px; padding: 6px 12px;
     display: flex; align-items: baseline; gap: 6px; color: var(--c-accent);
 }
 
@@ -202,7 +197,6 @@ input[type="checkbox"] {
 .btn-save { background: var(--c-primary); }
 .btn-reset { background: var(--c-btn); }
 
-/* クリック時のアニメーション */
 .btn:active, .step-btn:active, .buff-chip:active, .tab-item:active, .unit-btn:active {
     transform: scale(0.96);
     transition: transform 0.05s ease;
@@ -235,200 +229,94 @@ input[type="checkbox"] {
 
 /* ステッパー */
 .stepper-ctrl {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; width: 100%;
 }
 
 .step-btn {
-    width: 44px;
-    height: 44px;
-    background: #EFEBE9;
+    width: 44px; height: 44px;
+    background: #F1F8E9;
     border: 1px solid var(--c-btn);
     color: var(--c-primary);
-    font-size: 1.5rem;
-    font-weight: bold;
-    border-radius: 8px;
-    cursor: pointer;
-    padding: 0;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    user-select: none;
+    font-size: 1.5rem; font-weight: bold; border-radius: 8px;
+    cursor: pointer; padding: 0; line-height: 1; display: flex;
+    align-items: center; justify-content: center; user-select: none;
     transition: background 0.1s;
 }
 
 .step-display {
-    flex: 1;
-    display: flex;
-    align-items: baseline; 
-    justify-content: center;
-    background: #FFF;
-    border: 1px solid var(--c-border);
-    border-radius: 8px;
-    min-height: 44px;
-    padding: 10px 5px;
-    font-family: 'Roboto Mono', monospace;
-    font-size: 1.1rem;
-    cursor: default;
-    user-select: none;
-    white-space: nowrap;
-    box-sizing: border-box;
+    flex: 1; display: flex; align-items: baseline; justify-content: center;
+    background: #FFF; border: 1px solid var(--c-border); border-radius: 8px;
+    min-height: 44px; padding: 10px 5px; font-family: 'Roboto Mono', monospace;
+    font-size: 1.1rem; cursor: default; user-select: none;
+    white-space: nowrap; box-sizing: border-box;
 }
 
-/* 数値表示用 */
-.sub-label {
-    font-size: 0.8rem;
-    color: #8D6E63;
-    margin-right: 4px;
-    font-weight: bold;
-}
-.sub-sep {
-    display: inline-block;
-    width: 12px;
-}
+.sub-label { font-size: 0.8rem; color: #558B2F; margin-right: 4px; font-weight: bold; }
+.sub-sep { display: inline-block; width: 12px; }
 
-.val-lv { font-weight: bold; color: #3E2723; }
+.val-lv { font-weight: bold; color: #1B5E20; }
 .val-res { font-weight: bold; color: #007AFF; }
-.val-res.buffed { color: #2E7D32; }
+.val-res.buffed { color: var(--c-primary); }
 
-/* バフ選択 (トグルボタン) */
-.buff-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
+/* バフ選択 */
+.buff-group { display: flex; flex-wrap: wrap; gap: 10px; }
 
 .buff-chip {
-    flex: 1;
-    min-width: 140px; 
-    padding: 16px 10px;
-    background: #FFF;
-    border: 1px solid var(--c-border);
-    border-radius: 30px; 
-    color: var(--c-text);
-    font-weight: bold;
-    font-size: 1.1rem;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.2s;
-    user-select: none;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    flex: 1; min-width: 140px; padding: 16px 10px; background: #FFF;
+    border: 1px solid var(--c-border); border-radius: 30px; 
+    color: var(--c-text); font-weight: bold; font-size: 1.1rem;
+    cursor: pointer; text-align: center; transition: all 0.2s; user-select: none;
+    display: flex; justify-content: center; align-items: center;
 }
 
-/* コーヒーボタンの強調 */
-#btn-buff-250 span, #btn-buff-500 span {
-    font-size: 1.1rem;
-    font-weight: 900;
-}
-
-/* スキルボタンの文字サイズ調整 */
-#btn-skill span {
-    font-size: 1.1rem;
-    font-weight: bold;
-}
+#btn-buff-250 span, #btn-buff-500 span { font-size: 1.1rem; font-weight: 900; }
+#btn-skill span { font-size: 1.1rem; font-weight: bold; }
 
 .buff-chip.active {
-    background: #007AFF; 
-    border-color: #007AFF;
-    color: #FFF;
-    box-shadow: 0 3px 8px rgba(0, 122, 255, 0.4);
-    transform: translateY(-1px);
+    background: #007AFF; border-color: #007AFF; color: #FFF;
+    box-shadow: 0 3px 8px rgba(0, 122, 255, 0.4); transform: translateY(-1px);
 }
 
-/* --- 非活性化状態 --- */
-.disabled-item {
-    opacity: 0.4;
-    pointer-events: none;
-    filter: grayscale(100%);
-}
+.disabled-item { opacity: 0.4; pointer-events: none; filter: grayscale(100%); }
 
 /* --- 討伐判定結果 --- */
 .battle-result-box {
-    margin-top: 12px;
-    padding: 10px;
-    border-radius: 8px;
-    text-align: center;
-    background: #EEE;
-    border: 2px solid #CCC;
-    color: #555;
-    font-family: 'Roboto Mono', monospace;
-    line-height: 1.6;
+    margin-top: 12px; padding: 10px; border-radius: 8px; text-align: center;
+    background: #F1F8E9; border: 2px solid var(--c-border); color: #555;
+    font-family: 'Roboto Mono', monospace; line-height: 1.6;
 }
-.battle-result-box.win {
-    background: #E8F5E9;
-    border-color: #2E7D32;
-    color: #2E7D32;
-}
-.battle-result-box.lose {
-    background: #FFEBEE;
-    border-color: #C62828;
-    color: #C62828;
-}
+.battle-result-box.win { background: #E8F5E9; border-color: #2E7D32; color: #2E7D32; }
+.battle-result-box.lose { background: #FFF3E0; border-color: #EF6C00; color: #E65100; }
 
-/* --- タブメニュー用CSS --- */
-.tab-menu {
-    display: flex;
-    gap: 5px;
-}
+/* --- タブメニュー --- */
+.tab-menu { display: flex; gap: 5px; }
 .tab-item {
-    flex: 1;
-    padding: 12px;
-    background: #D7CCC8;
-    border: none;
-    border-radius: 8px 8px 0 0;
-    font-weight: bold;
-    color: #5D4037;
-    cursor: pointer;
-    transition: background 0.2s, color 0.2s;
+    flex: 1; padding: 12px; background: #C5E1A5; border: none;
+    border-radius: 8px 8px 0 0; font-weight: bold; color: #33691E;
+    cursor: pointer; transition: background 0.2s, color 0.2s;
     border-bottom: 3px solid transparent;
 }
-.tab-item.active {
-    background: #FFF;
-    color: #BF360C;
-    border-bottom: 3px solid #BF360C;
-}
-.tab-content {
-    animation: fadein 0.3s;
-}
-@keyframes fadein {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-}
+.tab-item.active { background: #FFF; color: var(--c-primary); border-bottom: 3px solid var(--c-primary); }
+.tab-content { animation: fadein 0.3s; }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
 
 /* --- 強化設定エリア --- */
 .bonus-area {
-    background: #F5F5F5;
-    border: 1px solid #E0E0E0;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 15px;
+    background: #F1F8E9; border: 1px solid #C5E1A5; border-radius: 8px;
+    padding: 15px; margin-bottom: 15px;
 }
 
 /* --- 討伐可能ライン表示ボックス --- */
 .max-win-box {
-    background: #E8F5E9;
-    border: 1px solid #2E7D32;
-    border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 20px;
-    text-align: center;
+    background: #E8F5E9; border: 1px solid #2E7D32; border-radius: 8px;
+    padding: 12px; margin-bottom: 20px; text-align: center;
 }
-.max-win-box .label {
-    font-size: 0.9rem;
-    font-weight: bold;
-    color: #2E7D32;
-    margin-bottom: 6px;
-}
+.max-win-box .label { font-size: 0.9rem; font-weight: bold; color: #2E7D32; margin-bottom: 6px; }
 .max-win-box .value {
-    display: flex;
-    align-items: baseline; 
-    justify-content: center;
-    font-family: 'Roboto Mono', monospace;
-    gap: 15px; /* ★ここを追加: 要素同士の間隔を広げる */
+    display: flex; align-items: baseline; justify-content: center;
+    font-family: 'Roboto Mono', monospace; gap: 15px; 
 }
+
+/* HTML側で直接指定されている色を強制的に緑テーマで上書き */
+#now-date, .bonus-area label { color: #33691E !important; }
