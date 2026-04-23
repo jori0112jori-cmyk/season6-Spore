@@ -5,90 +5,102 @@ const app = (() => {
     const CONFIG = {
         SAVE_KEY: 's6_spore_v3_safe',
         DATA_KEY: 's6_custom_data_v1',
-        MAX_LV: 60,
-        PROD_BASE: 720
+        MAX_LV: 60
     };
 
-    let lang = 'ja';
-    let activeBuff = 0; 
-    let skillActive = false; 
-    let currentTab = 'main'; 
-    
     const $ = id => document.getElementById(id);
 
     const init = () => {
         try {
-            // 常に data.js からデータを読み込む（ブラウザの保存データは無視する）
+            // 常に data.js からデータを読み込む
             if (typeof DEFAULT_MASTER_DATA === 'undefined') throw new Error("data.js not found");
             DATA = JSON.parse(JSON.stringify(DEFAULT_MASTER_DATA));
             
-            // 入力状態（現在Lvや保有量）だけを復元
+            // 保存データの復元（IDをindex.htmlに合わせる）
             const saved = localStorage.getItem(CONFIG.SAVE_KEY);
             if(saved) {
                 const s = JSON.parse(saved);
                 if($('cur-lv')) $('cur-lv').value = s.cur || 0;
                 if($('tgt-lv')) $('tgt-lv').value = s.tgt || 0;
                 if($('stock')) $('stock').value = s.stock || 0;
-                if($('disc')) $('disc').value = s.disc || 0;
+                if($('discount')) $('discount').value = s.disc || 0;
             }
             calc();
         } catch(e) { console.error("Init Error:", e); }
     };
 
-    // この関数はもう不要なので中身を空にするか、呼び出しを消す
-    const loadMasterData = () => {
-        // 何もしない（カスタムデータの読み込みを廃止）
-    };
-
     const calc = () => {
-        const cur = parseInt($('cur-lv').value) || 0;
-        const tgt = parseInt($('tgt-lv').value) || 0;
-        const stock = parseInt($('stock').value) || 0;
-        const disc = (parseInt($('disc').value) || 0) / 100;
+        // index.htmlのID（cur-lv, tgt-lv）で取得するよう修正
+        const curEl = $('cur-lv');
+        const tgtEl = $('tgt-lv');
+        if (!curEl || !tgtEl) return; 
 
-        // --- 必要量の計算ロジック修正 ---
-        // Lv19→20の場合、COSTS[19]を参照するように固定
+        const cur = parseInt(curEl.textContent || curEl.value) || 0;
+        const tgt = parseInt(tgtEl.textContent || tgtEl.value) || 0;
+        const stock = parseInt($('stock')?.value) || 0;
+        const disc = (parseFloat($('discount')?.value) || 0) / 100;
+
+        // 必要量の計算
         let totalCost = 0;
         if (tgt > cur) {
             for (let i = cur; i < tgt; i++) {
                 totalCost += (DATA.COSTS[i] || 0);
             }
         }
-        // 割引適用
         totalCost = Math.floor(totalCost * (1 - disc));
 
-        // 表示更新
-        $('res-cost').textContent = totalCost.toLocaleString();
-        $('res-virus').textContent = (DATA.VIRUS[cur] || 0).toLocaleString();
+        // 画面表示への反映（index.htmlのIDに合わせる）
+        if($('res-cost')) $('res-cost').textContent = totalCost.toLocaleString();
         
-        const short = Math.max(0, totalCost - stock);
-        $('res-short').textContent = short.toLocaleString();
-        $('res-short').className = short > 0 ? 'value highlight' : 'value';
+        if($('res-virus')) {
+            const curV = DATA.VIRUS[cur] || 0;
+            const tgtV = DATA.VIRUS[tgt] || 0;
+            $('res-virus').textContent = curV.toLocaleString() + " → " + tgtV.toLocaleString();
+        }
+        
+        if($('res-short')) {
+            const short = Math.max(0, totalCost - stock);
+            $('res-short').textContent = short.toLocaleString();
+        }
+
+        // ラベルの更新（見た目用）
+        if($('disp-cur-lv')) $('disp-cur-lv').textContent = cur;
+        if($('disp-tgt-lv')) $('disp-tgt-lv').textContent = tgt;
+        if($('disp-cur-res')) $('disp-cur-res').textContent = (DATA.VIRUS[cur] || 0).toLocaleString();
+        if($('disp-tgt-res')) $('disp-tgt-res').textContent = (DATA.VIRUS[tgt] || 0).toLocaleString();
 
         save();
     };
 
     const save = () => {
         const s = {
-            cur: $('cur-lv').value,
-            tgt: $('tgt-lv').value,
-            stock: Stock = $('stock').value,
-            disc: $('disc').value
+            cur: $('cur-lv')?.value || $('disp-cur-lv')?.textContent,
+            tgt: $('tgt-lv')?.value || $('disp-tgt-lv')?.textContent,
+            stock: $('stock')?.value,
+            disc: $('discount')?.value
         };
         localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(s));
     };
 
-    // 外部公開メソッド
     window.app = {
-        init, calc, 
-        step: (id, val) => {
-            const el = $(id);
-            let n = parseInt(el.value) || 0;
-            el.value = Math.max(0, Math.min(CONFIG.MAX_LV, n + val));
+        init, calc,
+        // ボタンのIDを cur-lv / tgt-lv に修正
+        step: (type, val) => {
+            const id = type + '-lv'; 
+            const dispId = 'disp-' + type + '-lv';
+            let n = parseInt($(dispId)?.textContent) || 0;
+            const nextVal = Math.max(0, Math.min(CONFIG.MAX_LV, n + val));
+            
+            if($(dispId)) $(dispId).textContent = nextVal;
+            // 隠し入力欄がある場合も考慮
+            if($(id)) $(id).value = nextVal;
+            
             calc();
         },
-        reset: () => { if(confirm('データをリセットしますか？')){ localStorage.removeItem(CONFIG.SAVE_KEY); location.reload(); }},
-        resetAdmin: () => { if(confirm('マスターデータを初期化しますか？')){ localStorage.removeItem(CONFIG.DATA_KEY); location.reload(); }}
+        reset: () => { if(confirm('リセットしますか？')){ localStorage.removeItem(CONFIG.SAVE_KEY); location.reload(); }},
+        // 不要な関数もエラー防止のため形だけ残す
+        toggleAdmin: () => {},
+        setLang: (l) => { location.reload(); }
     };
 
     return window.app;
