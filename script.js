@@ -41,7 +41,7 @@ const DEFAULT_DATA = {
             r_daily: "最大生産時間(24h)", 
             r_cost: "必要量", 
             r_virus: "合計ウイルス耐性", 
-            r_short: "不足 (切り上げ)", 
+            r_short: "不足 (切上げ)", 
             btn_save: "データ保存", 
             btn_reset: "リセット", 
             btn_now: "現在", 
@@ -385,7 +385,7 @@ const app = (() => {
                 realCost += discountedCost;
             }
         }
-        if($('res-cost')) $('res-cost').innerHTML = fmt(realCost);
+        if($('res-cost')) $('res-cost').innerHTML = fmtKM(realCost, true);
 
         const wBonus = (weeklyActive && weeklyLv >= 1) ? 250 : 0;
         const totalBonus = wBonus + activeBuff;
@@ -530,9 +530,22 @@ const app = (() => {
     const pz = n => String(n).padStart(2, '0');
     
     const fmtKM = (n, detailed=false) => {
-        if(n >= 1000000) return parseFloat((n/1000000).toFixed(2)) + '<span class="unit">M</span>';
-        if(n >= 1000) return parseFloat((n/1000).toFixed(2)) + '<span class="unit">K</span>';
-        return fmt(n);
+    const base = fmt(n);
+
+    const formatShort = (value, unit) => {
+        const num = parseFloat(value.toFixed(2)); // 最大2桁＆不要0削除
+        return num + `<span class="unit">${unit}</span>`;
+    };
+
+    if(n >= 1000000) {
+        const short = formatShort(n/1000000, 'M');
+        return detailed ? `${base} (${short})` : short;
+    }
+    if(n >= 1000) {
+        const short = formatShort(n/1000, 'K');
+        return detailed ? `${base} (${short})` : short;
+    }
+    return base;
     };
 
     const parseStock = v => {
