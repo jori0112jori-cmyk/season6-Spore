@@ -4,7 +4,6 @@ let DATA = { COSTS: [], VIRUS: [], ENEMIES: [], TEXT: {} };
 const app = (() => {
     const CONFIG = {
         SAVE_KEY: 's6_spore_v3_safe',
-        DATA_KEY: 's6_custom_data_v1',
         MAX_LV: 60
     };
 
@@ -12,35 +11,69 @@ const app = (() => {
 
     const init = () => {
         try {
-            // 常に data.js からデータを読み込む
             if (typeof DEFAULT_MASTER_DATA === 'undefined') throw new Error("data.js not found");
             DATA = JSON.parse(JSON.stringify(DEFAULT_MASTER_DATA));
             
-            // 保存データの復元（IDをindex.htmlに合わせる）
+            // 1. 工場の入力欄を生成（これがないと日産が計算されません）
+            renderFactories();
+
+            // 2. データの復元
             const saved = localStorage.getItem(CONFIG.SAVE_KEY);
             if(saved) {
                 const s = JSON.parse(saved);
-                if($('cur-lv')) $('cur-lv').value = s.cur || 0;
-                if($('tgt-lv')) $('tgt-lv').value = s.tgt || 0;
                 if($('stock')) $('stock').value = s.stock || 0;
                 if($('discount')) $('discount').value = s.disc || 0;
+                // レベルの復元
+                setVal('cur', s.cur || 0);
+                setVal('tgt', s.tgt || 1);
+            } else {
+                setVal('cur', 0);
+                setVal('tgt', 1);
             }
+            
             calc();
         } catch(e) { console.error("Init Error:", e); }
     };
 
+    // 工場（I～IV）の入力欄を作る関数
+    const renderFactories = () => {
+        const area = $('factory-area');
+        if (!area) return;
+        area.innerHTML = '';
+        for (let i = 1; i <= 4; i++) {
+            const div = document.createElement('div');
+            div.innerHTML = `
+                <label>工場 ${i}</label>
+                <input type="number" id="fac-${i}" value="0" min="0" max="30" oninput="app.calc()">
+            `;
+            area.appendChild(div);
+        }
+    };
+
+    const setVal = (type, val) => {
+        const dispLv = $('disp-' + type + '-lv');
+        const dispRes = $('disp-' + type + '-res');
+        if (dispLv) dispLv.textContent = val;
+        if (dispRes) dispRes.textContent = (DATA.VIRUS[val] || 0).toLocaleString();
+    };
+
     const calc = () => {
-        // index.htmlのID（cur-lv, tgt-lv）で取得するよう修正
-        const curEl = $('cur-lv');
-        const tgtEl = $('tgt-lv');
-        if (!curEl || !tgtEl) return; 
-
-        const cur = parseInt(curEl.textContent || curEl.value) || 0;
-        const tgt = parseInt(tgtEl.textContent || tgtEl.value) || 0;
+        const cur = parseInt($('disp-cur-lv')?.textContent) || 0;
+        const tgt = parseInt($('disp-tgt-lv')?.textContent) || 0;
         const stock = parseInt($('stock')?.value) || 0;
-        const disc = (parseFloat($('discount')?.value) || 0) / 100;
+        const disc = (parseFloat($('disp-disc')?.textContent) || 0) / 100;
 
-        // 必要量の計算
+        // --- 1. 生産量の計算 ---
+        let hourlyProd = 0;
+        for (let i = 1; i <= 4; i++) {
+            const lv = parseInt($('fac-' + i)?.value) || 0;
+            // 仮の生産量計算式（必要に応じて調整してください）
+            if (lv > 0) hourlyProd += (720 + (lv * 50)); 
+        }
+        if ($('total-prod')) $('total-prod').textContent = hourlyProd.toLocaleString() + '/h';
+        if ($('res-daily')) $('res-daily').textContent = (hourlyProd * 24).toLocaleString();
+
+        // --- 2. 必要量の計算 ---
         let totalCost = 0;
         if (tgt > cur) {
             for (let i = cur; i < tgt; i++) {
@@ -49,58 +82,70 @@ const app = (() => {
         }
         totalCost = Math.floor(totalCost * (1 - disc));
 
-        // 画面表示への反映（index.htmlのIDに合わせる）
+        // --- 3. 画面表示 ---
         if($('res-cost')) $('res-cost').textContent = totalCost.toLocaleString();
-        
         if($('res-virus')) {
             const curV = DATA.VIRUS[cur] || 0;
             const tgtV = DATA.VIRUS[tgt] || 0;
             $('res-virus').textContent = curV.toLocaleString() + " → " + tgtV.toLocaleString();
         }
         
-        if($('res-short')) {
-            const short = Math.max(0, totalCost - stock);
-            $('res-short').textContent = short.toLocaleString();
-        }
+        const short = Math.max(0, totalCost - stock);
+        if($('res-short')) $('res-short').textContent = short.toLocaleString();
 
-        // ラベルの更新（見た目用）
-        if($('disp-cur-lv')) $('disp-cur-lv').textContent = cur;
-        if($('disp-tgt-lv')) $('disp-tgt-lv').textContent = tgt;
-        if($('disp-cur-res')) $('disp-cur-res').textContent = (DATA.VIRUS[cur] || 0).toLocaleString();
-        if($('disp-tgt-res')) $('disp-tgt-res').textContent = (DATA.VIRUS[tgt] || 0).toLocaleString();
+        // 完了メッセージなど
+        if($('status-msg')) {
+            $('status-msg').textContent = short <= 0 ? "達成済み" : "不足分を生産中";
+        }
 
         save();
     };
 
     const save = () => {
         const s = {
-            cur: $('cur-lv')?.value || $('disp-cur-lv')?.textContent,
-            tgt: $('tgt-lv')?.value || $('disp-tgt-lv')?.textContent,
+            cur: $('disp-cur-lv')?.textContent,
+            tgt: $('disp-tgt-lv')?.textContent,
             stock: $('stock')?.value,
-            disc: $('discount')?.value
+            disc: $('disp-disc')?.textContent
         };
         localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(s));
     };
 
     window.app = {
         init, calc,
-        // ボタンのIDを cur-lv / tgt-lv に修正
         step: (type, val) => {
-            const id = type + '-lv'; 
             const dispId = 'disp-' + type + '-lv';
-            let n = parseInt($(dispId)?.textContent) || 0;
+            const el = $(dispId);
+            if(!el) return;
+            let n = parseInt(el.textContent) || 0;
             const nextVal = Math.max(0, Math.min(CONFIG.MAX_LV, n + val));
+            el.textContent = nextVal;
             
-            if($(dispId)) $(dispId).textContent = nextVal;
-            // 隠し入力欄がある場合も考慮
-            if($(id)) $(id).value = nextVal;
+            // 耐性表示も更新
+            const resId = 'disp-' + type + '-res';
+            if($(resId)) $(resId).textContent = (DATA.VIRUS[nextVal] || 0).toLocaleString();
             
             calc();
         },
+        addUnit: (unit) => {
+            const el = $('stock');
+            let val = parseInt(el.value) || 0;
+            if(unit === 'k') el.value = val * 1000;
+            if(unit === 'm') el.value = val * 1000000;
+            calc();
+        },
+        setNow: () => {
+            const now = new Date();
+            if($('now-time')) $('now-time').value = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+            calc();
+        },
         reset: () => { if(confirm('リセットしますか？')){ localStorage.removeItem(CONFIG.SAVE_KEY); location.reload(); }},
-        // 不要な関数もエラー防止のため形だけ残す
-        toggleAdmin: () => {},
-        setLang: (l) => { location.reload(); }
+        switchTab: (tab) => {
+            $('view-main').style.display = tab === 'main' ? 'block' : 'none';
+            $('view-battle').style.display = tab === 'battle' ? 'block' : 'none';
+            $('tab-btn-main').className = tab === 'main' ? 'tab-item active' : 'tab-item';
+            $('tab-btn-battle').className = tab === 'battle' ? 'tab-item active' : 'tab-item';
+        }
     };
 
     return window.app;
