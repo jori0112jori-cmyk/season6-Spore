@@ -231,39 +231,13 @@
     </div>
 
     <div style="margin-top: 30px; text-align: center;">
-        <button onclick="app.toggleAdmin()" style="background:none; border:none; color:#999; text-decoration:underline; font-size:0.8rem; cursor:pointer;">
-            管理者モード (データ編集)
+        
         </button>
     </div>
 
-    <div id="admin-panel" class="card" style="display:none; margin-top:10px; border: 2px solid #ccc; background: #fff;">
-        <h3 style="margin-top:0;">データ編集</h3>
-        <p style="font-size:0.8rem; color:#666;">カンマ区切りで数値を入力してください。</p>
-        
-        <div class="mb-md">
-            <label style="display:block; font-weight:bold;">必要量 (Required Amount)</label>
-            <textarea id="admin-costs" style="width:100%; height:80px; font-family:monospace; font-size:0.8rem;"></textarea>
-        </div>
+   
 
-        <div class="mb-md">
-            <label style="display:block; font-weight:bold;">ウイルス (VIRUS)</label>
-            <textarea id="admin-virus" style="width:100%; height:50px; font-family:monospace; font-size:0.8rem;"></textarea>
-        </div>
-
-        <div class="mb-md">
-            <label style="display:block; font-weight:bold;">敵の耐性 (ENEMIES) <span style="font-size:0.8em; font-weight:normal;">(Lv1, Lv2...)</span></label>
-            <textarea id="admin-enemies" style="width:100%; height:50px; font-family:monospace; font-size:0.8rem;"></textarea>
-        </div>
-
-        <div class="btn-group">
-            <button class="btn" style="background:#2196F3; color:white;" onclick="app.saveAdmin()">データを適用して保存</button>
-            <button class="btn" style="background:#ccc; color:#333;" onclick="app.resetAdmin()">初期値に戻す</button>
-        </div>
-        <button onclick="app.toggleAdmin()" style="margin-top:10px; width:100%; padding:10px;">閉じる</button>
-    </div>
-</div>
-
-<script src="data.js"></script>
+<script src="data.js?v=2"></script>
 <script src="script.js"></script>
 </body>
 </html>
