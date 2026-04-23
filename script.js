@@ -11,21 +11,21 @@ const app = (() => {
 
     const init = () => {
         try {
+            // 1. data.js の読み込み確認
             if (typeof DEFAULT_MASTER_DATA === 'undefined') throw new Error("data.js not found");
             DATA = JSON.parse(JSON.stringify(DEFAULT_MASTER_DATA));
             
-            // 1. 工場エリアの生成
+            // 2. 工場エリア（胞子工場 I～IV）を画面に生成
             renderFactories();
 
-            // 2. データの復元
+            // 3. データの復元と初期値セット
             const saved = localStorage.getItem(CONFIG.SAVE_KEY);
             if(saved) {
                 const s = JSON.parse(saved);
                 if($('stock')) $('stock').value = s.stock || 0;
                 if($('discount')) $('discount').value = s.disc || 0;
-                // レベルの復元
-                updateDisplay('cur', s.cur || 19); // デフォルトを19に設定
-                updateDisplay('tgt', s.tgt || 20); // デフォルトを20に設定
+                updateDisplay('cur', s.cur || 19);
+                updateDisplay('tgt', s.tgt || 20);
             } else {
                 updateDisplay('cur', 19);
                 updateDisplay('tgt', 20);
@@ -35,40 +35,46 @@ const app = (() => {
         } catch(e) { console.error("Init Error:", e); }
     };
 
+    // 胞子工場の入力欄を生成する
     const renderFactories = () => {
         const area = $('factory-area');
         if (!area) return;
         area.innerHTML = '';
         for (let i = 1; i <= 4; i++) {
             const div = document.createElement('div');
+            div.className = 'factory-input-unit'; // 必要に応じてCSSクラス名を調整してください
             div.innerHTML = `
-                <label>工場 ${i}</label>
-                <input type="number" id="fac-${i}" value="20" min="0" max="30" oninput="app.calc()">
+                <label style="font-size:0.8rem;">胞子工場 ${i}</label>
+                <input type="number" id="fac-${i}" value="20" min="0" max="30" oninput="app.calc()" style="width:100%; padding:8px; border-radius:4px; border:1px solid #CCC;">
             `;
             area.appendChild(div);
         }
     };
 
+    // 画面上の Lv と 耐性 表示を更新する
     const updateDisplay = (type, lv) => {
         const dispLv = $('disp-' + type + '-lv');
         const dispRes = $('disp-' + type + '-res');
-        if (dispLv) dispLv.textContent = lv;
-        if (dispRes) dispRes.textContent = (DATA.VIRUS[lv] || 0).toLocaleString();
+        const resVal = (DATA.VIRUS[lv] !== undefined) ? DATA.VIRUS[lv] : 0;
         
-        // 討伐シミュ用
+        if (dispLv) dispLv.textContent = lv;
+        if (dispRes) dispRes.textContent = resVal.toLocaleString();
+        
+        // 討伐シミュレータ側の表示も連動
         if (type === 'cur') {
             if($('disp-battle-my-lv')) $('disp-battle-my-lv').textContent = lv;
-            if($('disp-battle-my-res')) $('disp-battle-my-res').textContent = (DATA.VIRUS[lv] || 0).toLocaleString();
+            if($('disp-battle-my-res')) $('disp-battle-my-res').textContent = resVal.toLocaleString();
         }
     };
 
     const calc = () => {
+        // 現在値を取得
         const cur = parseInt($('disp-cur-lv')?.textContent) || 0;
         const tgt = parseInt($('disp-tgt-lv')?.textContent) || 0;
         const stock = parseInt($('stock')?.value) || 0;
         const disc = (parseFloat($('disp-disc')?.textContent) || 0) / 100;
 
-        // 1. 生産量の計算 (Base 720 + Lv毎に加算)
+        // 1. 生産量の計算 (Base 720 + Lv*50)
         let hourlyProd = 0;
         for (let i = 1; i <= 4; i++) {
             const lv = parseInt($('fac-' + i)?.value) || 0;
@@ -77,7 +83,7 @@ const app = (() => {
         if ($('total-prod')) $('total-prod').textContent = hourlyProd.toLocaleString() + '/h';
         if ($('res-daily')) $('res-daily').textContent = (hourlyProd * 24).toLocaleString();
 
-        // 2. 必要量の合計 (data.js の COSTS を参照)
+        // 2. 必要量の合計 (data.js から正確に取得)
         let totalCost = 0;
         if (tgt > cur) {
             for (let i = cur; i < tgt; i++) {
@@ -86,7 +92,7 @@ const app = (() => {
         }
         totalCost = Math.floor(totalCost * (1 - disc));
 
-        // 3. 表示反映
+        // 3. 表示への反映
         if($('res-cost')) $('res-cost').textContent = totalCost.toLocaleString();
         if($('res-virus')) {
             const curV = DATA.VIRUS[cur] || 0;
@@ -96,7 +102,7 @@ const app = (() => {
         
         const short = Math.max(0, totalCost - stock);
         if($('res-short')) $('res-short').textContent = short.toLocaleString();
-        if($('status-msg')) $('status-msg').textContent = short <= 0 ? "達成済み" : "不足分を計算中";
+        if($('status-msg')) $('status-msg').textContent = short <= 0 ? "達成済み" : "必要量を計算中";
 
         save();
     };
@@ -113,6 +119,7 @@ const app = (() => {
 
     window.app = {
         init, calc,
+        // ボタン操作（＋ －）
         step: (type, val) => {
             const el = $('disp-' + type + '-lv') || $('disp-' + type);
             if(!el) return;
@@ -148,7 +155,7 @@ const app = (() => {
             $('tab-btn-main').className = tab === 'main' ? 'tab-item active' : 'tab-item';
             $('tab-btn-battle').className = tab === 'battle' ? 'tab-item active' : 'tab-item';
         },
-        reset: () => { if(confirm('リセットしますか？')){ localStorage.clear(); location.reload(); } }
+        reset: () => { if(confirm('設定をリセットしますか？')){ localStorage.clear(); location.reload(); } }
     };
 
     return window.app;
