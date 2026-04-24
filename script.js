@@ -346,7 +346,7 @@ const app = (() => {
     const addUnit = (unit) => {
         const el = $('stock');
         if (!el) return;
-        el.value = (el.value || "") + unit;
+        el.value = ((el.value || "") + unit).toUpperCase();
         calc();
         el.focus();
     };
