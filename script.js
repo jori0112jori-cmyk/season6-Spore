@@ -131,7 +131,7 @@ const app = (() => {
             const subTitle = document.querySelector('.subtitle');
             if(subTitle) subTitle.textContent = `LastWar S6 Spore Calc (Data: Lv.${maxDataLv})`;
             
-            lang = localStorage.getItem('s5_lang') || 'ja';
+            lang = localStorage.getItem('s6_lang') || 'ja';
             renderUI();
             try { loadData(); } catch(e) { console.warn("Load skipped", e); }
             setLang(lang);
@@ -400,6 +400,17 @@ const app = (() => {
         if($('res-cost')) $('res-cost').innerHTML = fmtKM(realCost, true);
         renderBreakdown(breakdownRows, realCost, hourlyProd);
 
+        // 消費減少率バッジを更新
+        const discBadgeText = rate > 0 ? `消費減少率 ${rate.toFixed(1)}%` : '';
+        const discBadgeTextEn = rate > 0 ? `Discount ${rate.toFixed(1)}%` : '';
+        const badgeStr = rate > 0 ? (lang === 'ja' ? discBadgeText : discBadgeTextEn) : '';
+        ['res-disc-badge', 'breakdown-disc-badge'].forEach(id => {
+            const el = $(id);
+            if(!el) return;
+            el.textContent = badgeStr;
+            el.style.display = rate > 0 ? 'inline-block' : 'none';
+        });
+
         const wBonus = (weeklyActive && weeklyLv >= 1) ? 250 : 0;
         const totalBonus = wBonus + activeBuff;
         const curVirusBase = DATA.VIRUS[cLv] || 0;
@@ -592,9 +603,10 @@ const app = (() => {
         }
 
         const hoursNeeded = shortage / hourlyProd;
-        const nowVal = $('now-time').value.split(':');
+        const nowRaw = $('now-time')?.value || '0:00';
+        const nowVal = nowRaw.includes(':') ? nowRaw.split(':') : ['0', '00'];
         const d = new Date();
-        d.setHours(nowVal[0]||0, nowVal[1]||0, 0, 0);
+        d.setHours(parseInt(nowVal[0])||0, parseInt(nowVal[1])||0, 0, 0);
         d.setMinutes(d.getMinutes() + (hoursNeeded * 60));
 
         setMsg(elMsg, elTime, "msg_wait", `${d.getHours()}:${pz(d.getMinutes())}`, "#BF360C");
@@ -700,7 +712,14 @@ const app = (() => {
     const loadData = () => {
         const raw = localStorage.getItem(CONFIG.SAVE_KEY);
         if(!raw) return;
-        const d = JSON.parse(raw);
+        let d;
+        try {
+            d = JSON.parse(raw);
+        } catch(e) {
+            console.warn('保存データの読み込みに失敗しました。データをリセットします。', e);
+            localStorage.removeItem(CONFIG.SAVE_KEY);
+            return;
+        }
         if(d.fs) d.fs.forEach((v,i) => { if($(`f${i+1}`)) $(`f${i+1}`).value = v; });
         if(d.wk) $('weekly-lv').value = d.wk;
         if(d.wa !== undefined) {
@@ -745,22 +764,23 @@ const app = (() => {
 
     const setLang = (l) => {
         lang = l;
-        localStorage.setItem('s5_lang', l);
+        localStorage.setItem('s6_lang', l);
         $$('[data-t]').forEach(el => {
             const key = el.getAttribute('data-t');
             if(DATA.TEXT[l] && DATA.TEXT[l][key]) el.textContent = DATA.TEXT[l][key];
         });
-        $$('.flag-icon').forEach(e => e.classList.toggle('active', e.getAttribute('onclick').includes(l)));
+        $$('.flag-icon').forEach(e => e.classList.toggle('active', e.getAttribute('alt') === l.toUpperCase()));
         calc();
     };
 
     const toggleAdmin = () => {
         const p = $('admin-panel');
-        if(p) p.style.display = (p.style.display === 'none') ? 'block' : 'none';
+        if(!p) return;
+        p.style.display = (p.style.display === 'none') ? 'block' : 'none';
         if(p.style.display === 'block') {
-            $('admin-costs').value = DATA.COSTS.join(', ');
-            $('admin-virus').value = DATA.VIRUS.join(', ');
-            $('admin-enemies').value = DATA.ENEMIES.join(', ');
+            if($('admin-costs')) $('admin-costs').value = DATA.COSTS.join(', ');
+            if($('admin-virus')) $('admin-virus').value = DATA.VIRUS.join(', ');
+            if($('admin-enemies')) $('admin-enemies').value = DATA.ENEMIES.join(', ');
         }
     };
     const saveAdmin = () => {

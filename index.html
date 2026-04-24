@@ -121,7 +121,10 @@
         </div>
 
         <div class="card result-card">
-            <h2 data-t="h_res">計算結果</h2>
+            <div class="result-header">
+                <h2 data-t="h_res">計算結果</h2>
+                <span id="res-disc-badge" class="disc-badge" style="display:none;"></span>
+            </div>
             <div class="res-row">
                 <span data-t="r_daily">日産 (24h)</span>
                 <span class="res-val" id="res-daily">0</span>
@@ -155,6 +158,7 @@
             <div class="breakdown-header" onclick="app.toggleBreakdown()">
                 <span id="breakdown-toggle-icon">▶</span>
                 <span data-t="h_breakdown">段階別コスト内訳</span>
+                <span id="breakdown-disc-badge" class="disc-badge" style="display:none;"></span>
             </div>
             <div id="breakdown-body" style="display:none;">
                 <div id="breakdown-table"></div>
