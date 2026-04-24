@@ -48,7 +48,8 @@ const DEFAULT_DATA = {
             msg_ok: "達成済み", 
             msg_wait: "必要量確保予測", 
             msg_stop: "生産量 0", 
-            f_prefix: "胞子工場" 
+            f_prefix: "胞子工場",
+            h_breakdown: "段階別コスト内訳" 
         },
         en: { 
             title: "Coffee Calc", 
@@ -93,7 +94,8 @@ const DEFAULT_DATA = {
             msg_ok: "Completed", 
             msg_wait: "Prediction of required amount", 
             msg_stop: "No Prod", 
-            f_prefix: "Coffee Factory" 
+            f_prefix: "Coffee Factory",
+            h_breakdown: "Step-by-Step Breakdown" 
         }
     }
 };
@@ -236,6 +238,14 @@ const app = (() => {
         val += delta;
         if(val < 0) val = 0;
         if(val > CONFIG.MAX_LV) val = CONFIG.MAX_LV;
+
+        // 目標Lvは現在Lv+1以上に制限
+        if(type === 'tgt') {
+            const cLv = parseInt(document.getElementById('lab-cur')?.value || 0);
+            if(val <= cLv) val = cLv + 1;
+            if(val > CONFIG.MAX_LV) val = CONFIG.MAX_LV;
+        }
+
         el.value = val;
         
         if(type === 'cur') onCurChange();
@@ -377,15 +387,18 @@ const app = (() => {
         const rateInt = Math.round(rate * 10);
         const factor = 1000 - rateInt;
 
-        let realCost = 0; 
+        let realCost = 0;
+        const breakdownRows = [];
         if(cLv < tLv) {
             for(let i = cLv; i < tLv; i++) {
                 const baseCost = DATA.COSTS[i+1] || 0;
                 const discountedCost = Math.ceil((baseCost * factor) / 1000);
                 realCost += discountedCost;
+                breakdownRows.push({ fromLv: i, toLv: i+1, cost: discountedCost, cumulative: realCost });
             }
         }
         if($('res-cost')) $('res-cost').innerHTML = fmtKM(realCost, true);
+        renderBreakdown(breakdownRows, realCost, hourlyProd);
 
         const wBonus = (weeklyActive && weeklyLv >= 1) ? 250 : 0;
         const totalBonus = wBonus + activeBuff;
@@ -491,20 +504,90 @@ const app = (() => {
         updateStatus(safeShortage, hourlyProd);
     };
 
+    const renderBreakdown = (rows, totalCost, hourlyProd) => {
+        const card = $('breakdown-card');
+        const table = $('breakdown-table');
+        if(!card || !table) return;
+
+        if(rows.length <= 1) {
+            card.style.display = 'none';
+            return;
+        }
+        card.style.display = 'block';
+
+        const stock = parseStock($('stock')?.value || 0);
+        const nowVal = ($('now-time')?.value || '0:0').split(':');
+        const baseDate = new Date();
+        baseDate.setHours(parseInt(nowVal[0])||0, parseInt(nowVal[1])||0, 0, 0);
+
+        const isJa = lang === 'ja';
+        const hdrLv   = isJa ? 'Lv'     : 'Lv';
+        const hdrCost = isJa ? 'コスト' : 'Cost';
+        const hdrCumu = isJa ? '累計'   : 'Total';
+        const hdrEta  = isJa ? '達成予測' : 'ETA';
+
+        let html = `<table class="breakdown-tbl">
+            <thead><tr>
+                <th>${hdrLv}</th>
+                <th>${hdrCost}</th>
+                <th>${hdrCumu}</th>
+                <th>${hdrEta}</th>
+            </tr></thead><tbody>`;
+
+        rows.forEach(r => {
+            const shortage = Math.max(0, r.cumulative - stock);
+            let etaStr = '';
+            if(shortage <= 0) {
+                etaStr = isJa ? '達成済' : 'Done';
+            } else if(hourlyProd <= 0) {
+                etaStr = '---';
+            } else {
+                const mins = Math.ceil((shortage / hourlyProd) * 60);
+                const d = new Date(baseDate.getTime() + mins * 60000);
+                const dd = isJa
+                    ? `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${pz(d.getMinutes())}`
+                    : `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${pz(d.getMinutes())}`;
+                etaStr = dd;
+            }
+            const doneClass = shortage <= 0 ? ' class="row-done"' : '';
+            html += `<tr${doneClass}>
+                <td class="bd-lv">${r.fromLv}→${r.toLv}</td>
+                <td class="bd-cost">${fmtKM(r.cost)}</td>
+                <td class="bd-cumu">${fmtKM(r.cumulative)}</td>
+                <td class="bd-eta">${etaStr}</td>
+            </tr>`;
+        });
+
+        html += '</tbody></table>';
+        table.innerHTML = html;
+    };
+
+    let breakdownOpen = false;
+    const toggleBreakdown = () => {
+        breakdownOpen = !breakdownOpen;
+        const body = $('breakdown-body');
+        const icon = $('breakdown-toggle-icon');
+        if(body) body.style.display = breakdownOpen ? 'block' : 'none';
+        if(icon) icon.textContent = breakdownOpen ? '▼' : '▶';
+    };
+
     const updateStatus = (shortage, hourlyProd) => {
         const elTime = $('res-time');
         const elDate = $('res-date');
         const elMsg = $('status-msg');
+        const elRemaining = $('res-remaining');
         if(!elTime || !elDate || !elMsg) return;
 
         if(shortage <= 0) {
             setMsg(elMsg, elTime, "msg_ok", "OK", "#4E342E");
             elDate.textContent = "";
+            if(elRemaining) elRemaining.textContent = "";
             return;
         }
         if(hourlyProd <= 0) {
             setMsg(elMsg, elTime, "msg_stop", "---", "#8D6E63");
             elDate.textContent = "--/--";
+            if(elRemaining) elRemaining.textContent = "";
             return;
         }
 
@@ -516,6 +599,23 @@ const app = (() => {
 
         setMsg(elMsg, elTime, "msg_wait", `${d.getHours()}:${pz(d.getMinutes())}`, "#BF360C");
         elDate.textContent = `${d.getMonth()+1}/${d.getDate()}`;
+
+        // 残り時間を計算・表示
+        if(elRemaining) {
+            const totalMins = Math.ceil(hoursNeeded * 60);
+            const rDays  = Math.floor(totalMins / 1440);
+            const rHours = Math.floor((totalMins % 1440) / 60);
+            const rMins  = totalMins % 60;
+
+            let parts = [];
+            if(rDays  > 0) parts.push(lang === 'ja' ? `${rDays}日`    : `${rDays}d`);
+            if(rHours > 0) parts.push(lang === 'ja' ? `${rHours}時間` : `${rHours}h`);
+            if(rMins  > 0 || parts.length === 0)
+                            parts.push(lang === 'ja' ? `${rMins}分`   : `${rMins}m`);
+
+            const prefix = lang === 'ja' ? 'あと' : 'in';
+            elRemaining.textContent = `${prefix} ${parts.join(' ')}`;
+        }
     };
 
     const setMsg = (msgEl, timeEl, msgKey, timeText, color) => {
@@ -550,11 +650,25 @@ const app = (() => {
 
     const parseStock = v => {
         if(!v) return 0;
-        let s = v.toString().toLowerCase().replace(/,/g,'');
+        let s = v.toString().toLowerCase().replace(/,/g,'').trim();
+        // 数字・小数点・k/m以外の文字を除去
+        s = s.replace(/[^0-9.km]/g, '');
+        if(!s) return 0;
         let m = 1;
         if(s.endsWith('k')) { m=1000; s=s.slice(0,-1); }
         else if(s.endsWith('m')) { m=1000000; s=s.slice(0,-1); }
-        return Math.floor((parseFloat(s)||0) * m); 
+        const parsed = parseFloat(s);
+        // NaN・負数はすべて0に倒す
+        if(isNaN(parsed) || parsed < 0) return 0;
+        return Math.floor(parsed * m);
+    };
+
+    // 保有量入力欄のリアルタイムバリデーション
+    const validateStock = () => {
+        const el = document.getElementById('stock');
+        if(!el) return;
+        // k/m以外の数字・小数点以外は入力させない
+        el.value = el.value.replace(/[^0-9.kKmM]/g, '');
     };
     
     const setNow = () => {
@@ -671,7 +785,8 @@ const app = (() => {
     window.app = { 
         init, calc, save, reset, setLang, setNow, onCurChange, 
         toggleAdmin, saveAdmin, resetAdmin, 
-        toggleBuffBtn, step, toggleWeekly, switchTab, toggleSkill, addUnit, backspace
+        toggleBuffBtn, step, toggleWeekly, switchTab, toggleSkill, addUnit, backspace, validateStock,
+        toggleBreakdown
     };
     
     return window.app;

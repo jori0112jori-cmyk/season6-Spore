@@ -95,7 +95,7 @@
                     
                     <div class="stock-input-group">
                         <input type="text" inputmode="decimal" id="stock" placeholder="0" 
-                               onfocus="this.select()" oninput="app.calc()" 
+                               onfocus="this.select()" oninput="app.validateStock(); app.calc()" 
                                enterkeyhint="done">
                         <div class="stock-tools">
                             <button class="unit-btn" onclick="app.addUnit('k')">K</button>
@@ -140,6 +140,8 @@
                 
                 <span class="big-time font-mono" id="res-time">--:--</span>
                 <span class="big-date" id="res-date">--/--</span>
+
+                <div id="res-remaining" class="remaining-area"></div>
                 
                 <div class="shortage-area">
                     <span data-t="r_short" style="font-size:0.85rem; font-weight:bold;">不足</span>
@@ -148,6 +150,17 @@
             </div>
         </div>
         
+        <!-- 段階別内訳 -->
+        <div class="card breakdown-card" id="breakdown-card" style="display:none;">
+            <div class="breakdown-header" onclick="app.toggleBreakdown()">
+                <span id="breakdown-toggle-icon">▶</span>
+                <span data-t="h_breakdown">段階別コスト内訳</span>
+            </div>
+            <div id="breakdown-body" style="display:none;">
+                <div id="breakdown-table"></div>
+            </div>
+        </div>
+
         <div class="btn-group">
             <button class="btn btn-save" onclick="app.save()" data-t="btn_save">設定を保存</button>
             <button class="btn btn-reset" onclick="app.reset()" data-t="btn_reset">リセット</button>

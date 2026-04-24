@@ -36,9 +36,10 @@ h1 { font-size: 1.2rem; color: var(--c-primary); margin: 0; line-height: 1.2; }
 .subtitle { font-size: 0.75rem; color: #558B2F; font-weight: normal; display: block; }
 
 h2 { 
-    font-size: 1rem; margin: 0 0 12px 0; color: var(--c-primary); 
-    border-bottom: 2px solid var(--c-border); padding-bottom: 6px; 
-    display: flex; justify-content: space-between; align-items: flex-end; 
+    font-size: 1.05rem; margin: 0 0 14px 0; color: var(--c-primary); 
+    border-bottom: 2px solid var(--c-border); padding-bottom: 8px; 
+    display: flex; justify-content: space-between; align-items: flex-end;
+    letter-spacing: 0.03em;
 }
 
 .font-mono { font-family: 'Roboto Mono', monospace; }
@@ -57,7 +58,11 @@ header { display: flex; justify-content: space-between; align-items: center; mar
     border: 1px solid var(--c-border);
 }
 
-.card.result-card { background: #F1F8E9; border: 2px solid #558B2F; box-shadow: 0 4px 12px var(--c-shadow); }
+.card.result-card { 
+    background: #F1F8E9; 
+    border: 2px solid #558B2F; 
+    box-shadow: 0 4px 16px rgba(27,94,32,0.18);
+}
 .res-val {
     font-family: 'Roboto Mono'; font-weight: 700; font-size: 1.1rem; color: var(--c-primary);
     background: rgba(255,255,255,0.5); 
@@ -170,7 +175,7 @@ input[type="checkbox"] {
 /* --- Values & Results --- */
 .res-row { 
     display: flex; justify-content: space-between; align-items: center; 
-    padding: 6px 0; border-bottom: 1px dashed var(--c-shadow); 
+    padding: 9px 4px; border-bottom: 1px dashed var(--c-shadow); 
 }
 .res-row:last-child { border: none; }
 
@@ -187,15 +192,28 @@ input[type="checkbox"] {
 .big-date { font-size: 1.2rem; font-weight: bold; color: #33691E; margin-bottom: 8px; }
 
 .shortage-area {
-    background: #FFF3E0; border-radius: 6px; padding: 6px 12px;
-    display: flex; align-items: baseline; gap: 6px; color: var(--c-accent);
+    background: #FFF3E0; border-radius: 8px; padding: 8px 16px;
+    display: flex; align-items: baseline; gap: 8px; color: var(--c-accent);
+    border: 1px solid #FFCC80; white-space: nowrap;
 }
 
 /* --- Buttons --- */
 .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-.btn { padding: 12px; border: none; border-radius: 8px; font-weight: bold; color: #fff; cursor: pointer; font-size: 0.9rem; transition: transform 0.1s, box-shadow 0.1s; }
-.btn-save { background: var(--c-primary); }
-.btn-reset { background: var(--c-btn); }
+.btn { 
+    padding: 14px; border: none; border-radius: 10px; font-weight: bold; color: #fff; 
+    cursor: pointer; font-size: 0.95rem; transition: transform 0.1s, box-shadow 0.1s;
+    letter-spacing: 0.03em;
+}
+.btn-save { 
+    background: linear-gradient(135deg, #2E7D32, #388E3C);
+    box-shadow: 0 3px 8px rgba(46,125,50,0.35);
+}
+.btn-save:hover { background: linear-gradient(135deg, #1B5E20, #2E7D32); }
+.btn-reset { 
+    background: linear-gradient(135deg, #C62828, #E53935);
+    box-shadow: 0 3px 8px rgba(198,40,40,0.3);
+}
+.btn-reset:hover { background: linear-gradient(135deg, #B71C1C, #C62828); }
 
 .btn:active, .step-btn:active, .buff-chip:active, .tab-item:active, .unit-btn:active {
     transform: scale(0.96);
@@ -234,15 +252,17 @@ input[type="checkbox"] {
 }
 
 .step-btn {
-    width: 44px; height: 44px;
-    background: #F1F8E9;
-    border: 1px solid var(--c-btn);
-    color: var(--c-primary);
-    font-size: 1.5rem; font-weight: bold; border-radius: 8px;
+    width: 48px; height: 48px;
+    background: #558B2F;
+    border: 1px solid #33691E;
+    color: #FFF;
+    font-size: 1.6rem; font-weight: bold; border-radius: 10px;
     cursor: pointer; padding: 0; line-height: 1; display: flex;
     align-items: center; justify-content: center; user-select: none;
     transition: background 0.1s;
+    box-shadow: 0 2px 4px rgba(27,94,32,0.2);
 }
+.step-btn:hover { background: #33691E; }
 
 .step-display {
     flex: 1; display: flex; align-items: baseline; justify-content: center;
@@ -292,10 +312,11 @@ input[type="checkbox"] {
 /* --- タブメニュー --- */
 .tab-menu { display: flex; gap: 5px; }
 .tab-item {
-    flex: 1; padding: 12px; background: #C5E1A5; border: none;
-    border-radius: 8px 8px 0 0; font-weight: bold; color: #33691E;
+    flex: 1; padding: 12px; background: #7CB342; border: none;
+    border-radius: 8px 8px 0 0; font-weight: bold; color: #F1F8E9;
     cursor: pointer; transition: background 0.2s, color 0.2s;
     border-bottom: 3px solid transparent;
+    font-size: 0.95rem; letter-spacing: 0.02em;
 }
 .tab-item.active { background: #FFF; color: var(--c-primary); border-bottom: 3px solid var(--c-primary); }
 .tab-content { animation: fadein 0.3s; }
@@ -320,3 +341,88 @@ input[type="checkbox"] {
 
 /* HTML側で直接指定されている色を強制的に緑テーマで上書き */
 #now-date, .bonus-area label { color: #33691E !important; }
+/* --- 残り時間表示 --- */
+.remaining-area {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #5D4037;
+    background: #FFF8E1;
+    border: 1px dashed #EF6C00;
+    border-radius: 20px;
+    padding: 4px 14px;
+    margin: 4px 0 6px;
+    min-height: 1.4em;
+    letter-spacing: 0.02em;
+}
+.remaining-area:empty {
+    display: none;
+}
+
+/* --- 段階別コスト内訳 --- */
+.breakdown-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.breakdown-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    font-weight: bold;
+    font-size: 0.95rem;
+    color: var(--c-primary);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+}
+.breakdown-header:hover { background: #F1F8E9; }
+
+#breakdown-toggle-icon {
+    font-size: 0.75rem;
+    color: var(--c-btn);
+    transition: transform 0.2s;
+}
+
+#breakdown-body {
+    padding: 0 12px 14px;
+}
+
+.breakdown-tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    font-family: 'Roboto Mono', monospace;
+}
+
+.breakdown-tbl thead tr {
+    background: #C5E1A5;
+    color: #1B5E20;
+}
+
+.breakdown-tbl th {
+    padding: 7px 6px;
+    text-align: center;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+}
+
+.breakdown-tbl td {
+    padding: 6px 6px;
+    text-align: center;
+    border-bottom: 1px dashed #DCEDC8;
+    color: var(--c-text);
+}
+
+.breakdown-tbl tbody tr:last-child td { border-bottom: none; }
+
+.breakdown-tbl tbody tr:nth-child(even) { background: #F9FBF5; }
+
+.breakdown-tbl tbody tr.row-done td {
+    color: #9E9E9E;
+    text-decoration: line-through;
+}
+
+.bd-lv   { font-weight: bold; color: var(--c-primary) !important; text-decoration: none !important; }
+.bd-eta  { font-size: 0.78rem; }
