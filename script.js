@@ -667,8 +667,8 @@ const app = (() => {
         s = s.replace(/[^0-9.km]/g, '');
         if(!s) return 0;
         let m = 1;
-        if(s.endsWith('k')) { m=1000; s=s.slice(0,-1); }
-        else if(s.endsWith('m')) { m=1000000; s=s.slice(0,-1); }
+        if(s.endsWith('K')) { m=1000; s=s.slice(0,-1); }
+        else if(s.endsWith('M')) { m=1000000; s=s.slice(0,-1); }
         const parsed = parseFloat(s);
         // NaN・負数はすべて0に倒す
         if(isNaN(parsed) || parsed < 0) return 0;
