@@ -1,6 +1,6 @@
 /* --- Static Data --- */
 const DEFAULT_DATA = {
-    COSTS: [0, 700, 11200, 22400, 44800, 89600, 125440, 163073, 195686, 234824, 281788, 338146, 405776, 486931, 584317, 701180, 771299, 848428, 933270, 1026598, 1129258, 1242183, 1366401, 1503041, 1653346, 0, 919100, 928300, 937600, 947000, 956500, 966000, 975700, 985500, 995300, 1005300, 1206300, 1326900, 1333600, 1340200, 1346900, 1353700, 1360400, 1367300, 1374100, 1381000, 1387900, 1394800, 1401800, 1408800, 1415800, 1422900, 1430000, 1436700, 1444400, 1451600, 1458800, 1466100, 1473500, 1480800, 1488200],
+    COSTS: [0, 700, 11200, 22400, 44800, 89600, 125440, 163073, 195686, 234824, 281788, 338146, 405776, 486931, 584317, 701180, 771299, 848428, 933270, 1026598, 1129258, 1242183, 1366401, 1503041, 901000, 910000, 919100, 928300, 937600, 947000, 956500, 966000, 975700, 985500, 995300, 1005300, 1206300, 1326900, 1333600, 1340200, 1346900, 1353700, 1360400, 1367300, 1374100, 1381000, 1387900, 1394800, 1401800, 1408800, 1415800, 1422900, 1430000, 1436700, 1444400, 1451600, 1458800, 1466100, 1473500, 1480800, 1488200],
     VIRUS: [0, 250, 500, 750, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 10500, 11000, 11500, 12000, 12750, 13500, 0, 0, 7000, 7250, 7500, 7750, 8000, 8250, 8500, 8750, 9000, 9250, 9500, 9750, 10000, 10250, 10500, 10750, 11000, 11250, 10900, 11500, 11750, 12000, 12250, 12500, 0, 12400, 13300,18000, 23000, 28000],
     ENEMIES: [0, 250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2250, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 5750, 6000, 6250, 6500, 6750, 7000, 7250, 7500, 7750, 8000, 8250, 8500, 8750, 9000, 9250, 9500, 9750, 10000, 10250, 10500, 10750, 12000, 12250, 12500, 12750, 13000, 13250, 13500, 13750, 14000, 14250, 9500, 14500, 14750, 15000, 15250, 0, 11000, 11250, 11500, 11750, 12000, 12250, 12500, 12750, 13000, 13250, 13500, 13750, 14000, 14250, 14500, 14750, 15000, 15250, 0, 16850, 17150, 17550, 17950, 18250, 18650, 18950, 19350, 19650, 20050, 20350, 20750, 21150, 21450, 21850, 22150, 22550, 22850, 23250, 23450, 23600, 23800, 24000, 24150, 24350, 24550, 24700, 24900, 25100, 25250, 25450, 25650, 25800, 26000, 26200, 26350, 26550, 26750, 26900, 27100, 27300, 27450, 27650, 27850, 28000, 28200, 28400, 28550, 28750],
     
@@ -401,9 +401,9 @@ const app = (() => {
         renderBreakdown(breakdownRows, realCost, hourlyProd);
 
         // 消費減少率バッジを更新
-        const discBadgeText = rate > 0 ? `消費減少率 ${rate.toFixed(1)}%` : '';
-        const discBadgeTextEn = rate > 0 ? `Discount ${rate.toFixed(1)}%` : '';
-        const badgeStr = rate > 0 ? (lang === 'ja' ? discBadgeText : discBadgeTextEn) : '';
+        const badgeStr = rate > 0
+            ? (lang === 'ja' ? `消費減少率 ${rate.toFixed(1)}%` : `Discount ${rate.toFixed(1)}%`)
+            : '';
         ['res-disc-badge', 'breakdown-disc-badge'].forEach(id => {
             const el = $(id);
             if(!el) return;
@@ -431,6 +431,8 @@ const app = (() => {
         let maxWinLv = 0;
         let maxWinReq = 0;
         
+        // NOTE: データ収集中のLvは0が入るためbreakで止める
+        // データが全部埋まったら「=== 0) break」を「=== 0) continue」に変えること
         for (let i = 1; i < DATA.ENEMIES.length; i++) {
             if (DATA.ENEMIES[i] === 0) break;
             if (DATA.ENEMIES[i] <= battleVirusTotal) {
@@ -527,7 +529,8 @@ const app = (() => {
         card.style.display = 'block';
 
         const stock = parseStock($('stock')?.value || 0);
-        const nowVal = ($('now-time')?.value || '0:0').split(':');
+        const nowRaw = $('now-time')?.value || '0:00';
+        const nowVal = nowRaw.includes(':') ? nowRaw.split(':') : ['0', '00'];
         const baseDate = new Date();
         baseDate.setHours(parseInt(nowVal[0])||0, parseInt(nowVal[1])||0, 0, 0);
 
@@ -642,22 +645,20 @@ const app = (() => {
     const pz = n => String(n).padStart(2, '0');
     
     const fmtKM = (n, detailed=false) => {
-    const base = fmt(n);
-
-    const formatShort = (value, unit) => {
-        const num = parseFloat(value.toFixed(2)); // 最大2桁＆不要0削除
-        return num + `<span class="unit">${unit}</span>`;
-    };
-
-    if(n >= 1000000) {
-        const short = formatShort(n/1000000, 'M');
-        return detailed ? `${base} (${short})` : short;
-    }
-    if(n >= 1000) {
-        const short = formatShort(n/1000, 'K');
-        return detailed ? `${base} (${short})` : short;
-    }
-    return base;
+        const base = fmt(n);
+        const formatShort = (value, unit) => {
+            const num = parseFloat(value.toFixed(2)); // 最大2桁＆不要0削除
+            return num + `<span class="unit">${unit}</span>`;
+        };
+        if(n >= 1000000) {
+            const short = formatShort(n/1000000, 'M');
+            return detailed ? `${base} (${short})` : short;
+        }
+        if(n >= 1000) {
+            const short = formatShort(n/1000, 'K');
+            return detailed ? `${base} (${short})` : short;
+        }
+        return base;
     };
 
     const parseStock = v => {
