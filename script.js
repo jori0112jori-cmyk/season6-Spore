@@ -354,10 +354,11 @@ const app = (() => {
         if(num <= 0) { el.value = ''; el.dataset.raw = ''; return; }
         el.dataset.raw = num; // 正確な数値を保存
         if(num >= 1000000) {
-            const m = parseFloat((num / 1000000).toFixed(2));
+            // toFixed(3)で3桁まで、parseFloatで末尾0を除去
+            const m = parseFloat((num / 1000000).toFixed(3));
             el.value = m + 'M';
         } else if(num >= 1000) {
-            const k = parseFloat((num / 1000).toFixed(2));
+            const k = parseFloat((num / 1000).toFixed(3));
             el.value = k + 'K';
         } else {
             el.value = num.toLocaleString('ja-JP');
@@ -369,7 +370,7 @@ const app = (() => {
         if(stockFocused) return;
         stockFocused = true;
         // data-rawに正確な数値があればそれを使って展開
-        const raw = parseInt(el.dataset.raw || '0');
+        const raw = Number(el.dataset.raw || '0');
         if(raw > 0) {
             el.value = raw.toLocaleString('ja-JP');
         }
@@ -378,7 +379,12 @@ const app = (() => {
 
     const blurStock = (el) => {
         stockFocused = false;
-        validateStock();
+        // dataset.rawに正確な値があればそれを優先、なければparseStockで確定
+        const existingRaw = Number(el.dataset.raw || '0');
+        if(existingRaw <= 0) {
+            const num = parseStock(el.value);
+            el.dataset.raw = num > 0 ? num : '';
+        }
         formatStockDisplay(el);
         calc();
     };
@@ -387,7 +393,7 @@ const app = (() => {
         const el = $('stock');
         if (!el) return;
         // 短縮形なら正確な数値に展開してから追記
-        const raw = parseInt(el.dataset.raw || '0');
+        const raw = Number(el.dataset.raw || '0');
         if(raw > 0) {
             el.value = raw.toLocaleString('ja-JP');
             el.dataset.raw = '';
@@ -403,7 +409,7 @@ const app = (() => {
         const el = $('stock');
         if (!el) return;
         // 短縮形なら正確な数値に展開してから削除
-        const raw = parseInt(el.dataset.raw || '0');
+        const raw = Number(el.dataset.raw || '0');
         if(raw > 0) {
             el.value = raw.toLocaleString('ja-JP');
             el.dataset.raw = '';
@@ -720,44 +726,50 @@ const app = (() => {
     };
 
     const parseStock = v => {
-        if(!v) return 0;
-        let s = v.toString().toLowerCase().replace(/,/g,'').trim();
-        // 数字・小数点・k/m以外の文字を除去
-        s = s.replace(/[^0-9.km]/g, '');
-        if(!s) return 0;
-        let m = 1;
-        if(s.endsWith('k')) { m=1000; s=s.slice(0,-1); }
-        else if(s.endsWith('m')) { m=1000000; s=s.slice(0,-1); }
-        const parsed = parseFloat(s);
-        // NaN・負数はすべて0に倒す
-        if(isNaN(parsed) || parsed < 0) return 0;
-        return Math.floor(parsed * m);
-    };
+    if(!v) return 0;
+    let s = v.toString().toLowerCase().replace(/,/g,'').trim();
+    s = s.replace(/[^0-9.km]/g, '');
+    if(!s) return 0;
+
+    let m = 1;
+    if(s.endsWith('k')) { m=1000; s=s.slice(0,-1); }
+    else if(s.endsWith('m')) { m=1000000; s=s.slice(0,-1); }
+
+    const parsed = parseFloat(s);
+    if(isNaN(parsed) || parsed < 0) return 0;
+
+    return parsed * m; // ←ここ重要
+};
 
     // 保有量入力欄のリアルタイムバリデーション＆桁区切り表示
     const validateStock = () => {
-        const el = document.getElementById('stock');
-        if(!el) return;
+    const el = document.getElementById('stock');
+    if(!el) return;
 
-        let v = el.value.replace(/[^0-9.kKmM,]/g, '').toUpperCase();
+    let v = el.value.replace(/[^0-9.kKmM,\.]/g, '').toUpperCase();
 
-        // K/Mサフィックスがある場合は桁区切りしない（例: 1.5M）
-        if(v.endsWith('K') || v.endsWith('M')) {
-            el.value = v;
-            return;
-        }
+    // 🔴 これを最優先にする
+    if (/[KM]$/.test(v)) {
+        el.value = v;
+        return;
+    }
 
-        // カンマを除去して数値部分だけ取り出す
-        const raw = v.replace(/,/g, '');
-        const num = parseFloat(raw);
+    const raw = v.replace(/,/g, '');
 
-        // 有効な整数の場合のみ桁区切りを適用
-        if(!isNaN(num) && Number.isInteger(num) && raw !== '') {
-            el.value = num.toLocaleString('ja-JP');
-        } else {
-            el.value = raw;
-        }
-    };
+    // 小数入力中（完全にK/Mなし）
+    if (raw.includes('.')) {
+        el.value = raw;
+        return;
+    }
+
+    const num = parseFloat(raw);
+
+    if(!isNaN(num) && raw !== '') {
+        el.value = num.toLocaleString('ja-JP');
+    } else {
+        el.value = raw;
+    }
+};
     
     const setNow = () => {
         const d = new Date();
@@ -775,7 +787,7 @@ const app = (() => {
             wa: $('weekly-active').checked,
             lc: $('lab-cur').value,
             lt: $('lab-tgt').value,
-            st: $('stock').value,
+            st: $('stock').dataset.raw || $('stock').value,
             ds: $('discount').value,
             bf: activeBuff,
             elv: $('enemy-lv').value,
