@@ -46,7 +46,7 @@ const DEFAULT_DATA = {
             btn_reset: "リセット", 
             btn_now: "現在", 
             msg_ok: "達成済み", 
-            msg_wait: "必要量確保予測", 
+            msg_wait: "必要量達成時刻", 
             msg_stop: "生産量 0", 
             f_prefix: "胞子工場",
             h_breakdown: "段階別コスト内訳" 
