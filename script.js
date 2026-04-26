@@ -343,37 +343,79 @@ const app = (() => {
         calc(true);
     };
 
+    // blur時に短縮表示（例: 1,524,030 → 1.52M）にフォーマット
+    // フォーカス中フラグ（blur干渉防止）
+    let stockFocused = false;
+
+    // blur時に短縮表示（例: 1,524,030 → 1.52M）にフォーマット
+    // 正確な元の数値をdata-raw属性に保存する
+    const formatStockDisplay = (el) => {
+        const num = parseStock(el.value);
+        if(num <= 0) { el.value = ''; el.dataset.raw = ''; return; }
+        el.dataset.raw = num; // 正確な数値を保存
+        if(num >= 1000000) {
+            const m = parseFloat((num / 1000000).toFixed(2));
+            el.value = m + 'M';
+        } else if(num >= 1000) {
+            const k = parseFloat((num / 1000).toFixed(2));
+            el.value = k + 'K';
+        } else {
+            el.value = num.toLocaleString('ja-JP');
+        }
+    };
+
     const focusStock = (el) => {
-        // カンマを除去した生の数値に戻してから全選択
-        const v = (el.value || '').replace(/,/g, '');
-        el.value = v;
+        // addUnit/backspaceからのfocus()再発火はスキップ
+        if(stockFocused) return;
+        stockFocused = true;
+        // data-rawに正確な数値があればそれを使って展開
+        const raw = parseInt(el.dataset.raw || '0');
+        if(raw > 0) {
+            el.value = raw.toLocaleString('ja-JP');
+        }
         el.select();
-        // フォーカスが外れたら桁区切りに再フォーマット
-        el.onblur = () => {
-            validateStock();
-            calc();
-        };
+    };
+
+    const blurStock = (el) => {
+        stockFocused = false;
+        validateStock();
+        formatStockDisplay(el);
+        calc();
     };
 
     const addUnit = (unit) => {
         const el = $('stock');
         if (!el) return;
-        el.value = ((el.value || "") + unit).toUpperCase();
+        // 短縮形なら正確な数値に展開してから追記
+        const raw = parseInt(el.dataset.raw || '0');
+        if(raw > 0) {
+            el.value = raw.toLocaleString('ja-JP');
+            el.dataset.raw = '';
+        }
+        el.value = (el.value || '') + unit.toUpperCase();
+        stockFocused = true;
         calc();
+        el.setSelectionRange(el.value.length, el.value.length);
         el.focus();
     };
 
     const backspace = () => {
         const el = $('stock');
         if (!el) return;
+        // 短縮形なら正確な数値に展開してから削除
+        const raw = parseInt(el.dataset.raw || '0');
+        if(raw > 0) {
+            el.value = raw.toLocaleString('ja-JP');
+            el.dataset.raw = '';
+            stockFocused = true;
+        }
         let val = el.value || "";
-        // 末尾がカンマの場合はカンマも含めて削除
         if(val.endsWith(',')) val = val.slice(0, -1);
         val = val.slice(0, -1);
         el.value = val;
-        // 再フォーマット
         validateStock();
         calc();
+        el.setSelectionRange(el.value.length, el.value.length);
         el.focus();
     };
 
@@ -765,7 +807,13 @@ const app = (() => {
 
         if(d.lc) $('lab-cur').value = d.lc;
         if(d.lt) $('lab-tgt').value = d.lt;
-        if(d.st) $('stock').value = d.st;
+        if(d.st) {
+            const stockEl = $('stock');
+            if(stockEl) {
+                stockEl.value = d.st;
+                formatStockDisplay(stockEl);
+            }
+        }
         if(d.ds) {
             $('discount').value = d.ds;
             if($('disp-disc')) $('disp-disc').textContent = parseFloat(d.ds).toFixed(1);
@@ -839,7 +887,7 @@ const app = (() => {
     window.app = { 
         init, calc, save, reset, setLang, setNow, onCurChange, 
         toggleAdmin, saveAdmin, resetAdmin, 
-        toggleBuffBtn, step, toggleWeekly, switchTab, toggleSkill, addUnit, backspace, validateStock, focusStock,
+        toggleBuffBtn, step, toggleWeekly, switchTab, toggleSkill, addUnit, backspace, validateStock, focusStock, blurStock, formatStockDisplay,
         toggleBreakdown
     };
     

@@ -95,7 +95,7 @@
                     
                     <div class="stock-input-group">
                         <input type="text" inputmode="decimal" id="stock" placeholder="0" 
-                               onfocus="app.focusStock(this)" oninput="app.validateStock(); app.calc()" 
+                               onfocus="app.focusStock(this)" onblur="app.blurStock(this)" oninput="app.validateStock(); app.calc()" 
                                enterkeyhint="done">
                         <div class="stock-tools">
                             <button class="unit-btn" onclick="app.addUnit('k')">K</button>
