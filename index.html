@@ -95,7 +95,7 @@
                     
                     <div class="stock-input-group">
                         <input type="text" inputmode="decimal" id="stock" placeholder="0" 
-                               onfocus="this.select()" oninput="app.validateStock(); app.calc()" 
+                               onfocus="app.focusStock(this)" oninput="app.validateStock(); app.calc()" 
                                enterkeyhint="done">
                         <div class="stock-tools">
                             <button class="unit-btn" onclick="app.addUnit('k')">K</button>
@@ -106,7 +106,7 @@
 
                 </div>
                 <div>
-                    <label data-t="disc">割引率 (%)</label>
+                    <label data-t="disc">消費減少率 (%)</label>
                     <div class="stepper-ctrl">
                         <button class="step-btn" onclick="app.step('disc', -0.5)">－</button>
                         <div class="step-display">

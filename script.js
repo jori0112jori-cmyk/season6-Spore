@@ -343,6 +343,18 @@ const app = (() => {
         calc(true);
     };
 
+    const focusStock = (el) => {
+        // カンマを除去した生の数値に戻してから全選択
+        const v = (el.value || '').replace(/,/g, '');
+        el.value = v;
+        el.select();
+        // フォーカスが外れたら桁区切りに再フォーマット
+        el.onblur = () => {
+            validateStock();
+            calc();
+        };
+    };
+
     const addUnit = (unit) => {
         const el = $('stock');
         if (!el) return;
@@ -351,12 +363,16 @@ const app = (() => {
         el.focus();
     };
 
-    // ★修正: バックスペース機能
     const backspace = () => {
         const el = $('stock');
         if (!el) return;
-        const val = el.value || "";
-        el.value = val.slice(0, -1);
+        let val = el.value || "";
+        // 末尾がカンマの場合はカンマも含めて削除
+        if(val.endsWith(',')) val = val.slice(0, -1);
+        val = val.slice(0, -1);
+        el.value = val;
+        // 再フォーマット
+        validateStock();
         calc();
         el.focus();
     };
@@ -823,7 +839,7 @@ const app = (() => {
     window.app = { 
         init, calc, save, reset, setLang, setNow, onCurChange, 
         toggleAdmin, saveAdmin, resetAdmin, 
-        toggleBuffBtn, step, toggleWeekly, switchTab, toggleSkill, addUnit, backspace, validateStock,
+        toggleBuffBtn, step, toggleWeekly, switchTab, toggleSkill, addUnit, backspace, validateStock, focusStock,
         toggleBreakdown
     };
     
