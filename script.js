@@ -115,6 +115,26 @@ const app = (() => {
         PROD_BASE: 720
     };
 
+    // ★ 実測値ベースのSR（不足率）ダメージテーブル
+    const SR_TABLE = [
+        { maxSR: 0,      dmg: 100 },
+        { maxSR: 0.0250, dmg:  80 },
+        { maxSR: 0.0450, dmg:  50 },
+        { maxSR: 0.0650, dmg:  20 },
+        { maxSR: 0.0840, dmg:  10 },
+        { maxSR: 0.1000, dmg:   7 },
+        { maxSR: 0.1150, dmg:   5 },
+        { maxSR: 0.1300, dmg:   3 },
+        { maxSR: 0.1450, dmg:   2 },
+        { maxSR: 0.1600, dmg:   1 },
+        { maxSR: 0.1750, dmg: 0.8 },
+        { maxSR: 0.1900, dmg: 0.6 },
+        { maxSR: 0.2000, dmg: 0.4 },
+        { maxSR: 0.2150, dmg: 0.2 },
+        { maxSR: 0.2250, dmg: 0.1 },
+        { maxSR: 1.0000, dmg: 0.1 }
+    ];
+
     let lang = 'ja';
     let activeBuff = 0; 
     let skillActive = false; 
@@ -343,18 +363,13 @@ const app = (() => {
         calc(true);
     };
 
-    // blur時に短縮表示（例: 1,524,030 → 1.52M）にフォーマット
-    // フォーカス中フラグ（blur干渉防止）
     let stockFocused = false;
 
-    // blur時に短縮表示（例: 1,524,030 → 1.52M）にフォーマット
-    // 正確な元の数値をdata-raw属性に保存する
     const formatStockDisplay = (el) => {
         const num = parseStock(el.value);
         if(num <= 0) { el.value = ''; el.dataset.raw = ''; return; }
-        el.dataset.raw = num; // 正確な数値を保存
+        el.dataset.raw = num;
         if(num >= 1000000) {
-            // toFixed(3)で3桁まで、parseFloatで末尾0を除去
             const m = parseFloat((num / 1000000).toFixed(3));
             el.value = m + 'M';
         } else if(num >= 1000) {
@@ -366,10 +381,8 @@ const app = (() => {
     };
 
     const focusStock = (el) => {
-        // addUnit/backspaceからのfocus()再発火はスキップ
         if(stockFocused) return;
         stockFocused = true;
-        // data-rawに正確な数値があればそれを使って展開
         const raw = Number(el.dataset.raw || '0');
         if(raw > 0) {
             el.value = raw.toLocaleString('ja-JP');
@@ -379,7 +392,6 @@ const app = (() => {
 
     const blurStock = (el) => {
         stockFocused = false;
-        // dataset.rawに正確な値があればそれを優先、なければparseStockで確定
         const existingRaw = Number(el.dataset.raw || '0');
         if(existingRaw <= 0) {
             const num = parseStock(el.value);
@@ -392,7 +404,6 @@ const app = (() => {
     const addUnit = (unit) => {
         const el = $('stock');
         if (!el) return;
-        // 短縮形なら正確な数値に展開してから追記
         const raw = Number(el.dataset.raw || '0');
         if(raw > 0) {
             el.value = raw.toLocaleString('ja-JP');
@@ -408,7 +419,6 @@ const app = (() => {
     const backspace = () => {
         const el = $('stock');
         if (!el) return;
-        // 短縮形なら正確な数値に展開してから削除
         const raw = Number(el.dataset.raw || '0');
         if(raw > 0) {
             el.value = raw.toLocaleString('ja-JP');
@@ -464,7 +474,6 @@ const app = (() => {
         if($('res-cost')) $('res-cost').innerHTML = fmtKM(realCost, true);
         renderBreakdown(breakdownRows, realCost, hourlyProd);
 
-        // 消費減少率バッジを更新
         const badgeStr = rate > 0
             ? (lang === 'ja' ? `消費減少率 ${rate.toFixed(1)}%` : `Discount ${rate.toFixed(1)}%`)
             : '';
@@ -495,8 +504,6 @@ const app = (() => {
         let maxWinLv = 0;
         let maxWinReq = 0;
         
-        // NOTE: データ収集中のLvは0が入るためbreakで止める
-        // データが全部埋まったら「=== 0) break」を「=== 0) continue」に変えること
         for (let i = 1; i < DATA.ENEMIES.length; i++) {
             if (DATA.ENEMIES[i] === 0) break;
             if (DATA.ENEMIES[i] <= battleVirusTotal) {
@@ -509,7 +516,6 @@ const app = (() => {
         if ($('disp-max-win-lv')) $('disp-max-win-lv').textContent = maxWinLv;
         if ($('disp-max-win-res')) $('disp-max-win-res').textContent = fmt(maxWinReq);
 
-        // ターゲット自動更新
         let enemyLv = parseInt($('enemy-lv').value || 1);
         const nextTargetLv = maxWinLv + 1;
         
@@ -527,7 +533,7 @@ const app = (() => {
         if($('disp-enemy-lv')) $('disp-enemy-lv').textContent = enemyLv;
         if($('disp-enemy-req')) $('disp-enemy-req').textContent = fmt(enemyReq);
 
-        // 判定結果
+        // ★★★ ダメージ判定ロジック（修正部分）★★★
         const battleStatus = $('battle-status');
         const battleDetail = $('battle-detail');
         const box = $('battle-result');
@@ -545,15 +551,19 @@ const app = (() => {
             } else {
                 if(battleStatus) battleStatus.textContent = "";
                 const diff = enemyReq - battleVirusTotal;
-                const rawRatio = diff / enemyReq;
-                const percentCeiled = Math.ceil(rawRatio * 100);
-                
-                const penaltyPercent = percentCeiled * 2;
-                let damageRate = 100 - penaltyPercent;
-                if (damageRate < 0) damageRate = 0;
+                const sr = diff / enemyReq; // 不足率の算出
 
-                let displayPenalty = penaltyPercent;
-                if (displayPenalty >= 100) displayPenalty = 99.9;
+                // 実測値ベースのSR_TABLEと照合
+                let damageRate = 0.1;
+                for (let i = 0; i < SR_TABLE.length; i++) {
+                    if (sr <= SR_TABLE[i].maxSR) {
+                        damageRate = SR_TABLE[i].dmg;
+                        break;
+                    }
+                }
+
+                // ゲーム内表示用のペナルティ幅（浮動小数点の計算誤差を修正）
+                const displayPenalty = parseFloat((100 - damageRate).toFixed(1));
 
                 const txtShort = DATA.TEXT[lang].res_short;
                 const txtDmg = DATA.TEXT[lang].res_dmg;
@@ -600,7 +610,7 @@ const app = (() => {
 
         const isJa = lang === 'ja';
         const hdrLv   = isJa ? 'Lv'     : 'Lv';
-        const hdrCost = isJa ? 'コスト' : 'Cost';
+        const hdrCost = isJa ? '必要量' : 'Cost';
         const hdrCumu = isJa ? '累計'   : 'Total';
         const hdrEta  = isJa ? '達成予測' : 'ETA';
 
@@ -679,7 +689,6 @@ const app = (() => {
         setMsg(elMsg, elTime, "msg_wait", `${d.getHours()}:${pz(d.getMinutes())}`, "#BF360C");
         elDate.textContent = `${d.getMonth()+1}/${d.getDate()}`;
 
-        // 残り時間を計算・表示
         if(elRemaining) {
             const totalMins = Math.ceil(hoursNeeded * 60);
             const rDays  = Math.floor(totalMins / 1440);
@@ -711,7 +720,7 @@ const app = (() => {
     const fmtKM = (n, detailed=false) => {
         const base = fmt(n);
         const formatShort = (value, unit) => {
-            const num = parseFloat(value.toFixed(2)); // 最大2桁＆不要0削除
+            const num = parseFloat(value.toFixed(2));
             return num + `<span class="unit">${unit}</span>`;
         };
         if(n >= 1000000) {
@@ -726,50 +735,47 @@ const app = (() => {
     };
 
     const parseStock = v => {
-    if(!v) return 0;
-    let s = v.toString().toLowerCase().replace(/,/g,'').trim();
-    s = s.replace(/[^0-9.km]/g, '');
-    if(!s) return 0;
+        if(!v) return 0;
+        let s = v.toString().toLowerCase().replace(/,/g,'').trim();
+        s = s.replace(/[^0-9.km]/g, '');
+        if(!s) return 0;
 
-    let m = 1;
-    if(s.endsWith('k')) { m=1000; s=s.slice(0,-1); }
-    else if(s.endsWith('m')) { m=1000000; s=s.slice(0,-1); }
+        let m = 1;
+        if(s.endsWith('k')) { m=1000; s=s.slice(0,-1); }
+        else if(s.endsWith('m')) { m=1000000; s=s.slice(0,-1); }
 
-    const parsed = parseFloat(s);
-    if(isNaN(parsed) || parsed < 0) return 0;
+        const parsed = parseFloat(s);
+        if(isNaN(parsed) || parsed < 0) return 0;
 
-    return parsed * m; // ←ここ重要
-};
+        return parsed * m;
+    };
 
-    // 保有量入力欄のリアルタイムバリデーション＆桁区切り表示
     const validateStock = () => {
-    const el = document.getElementById('stock');
-    if(!el) return;
+        const el = document.getElementById('stock');
+        if(!el) return;
 
-    let v = el.value.replace(/[^0-9.kKmM,\.]/g, '').toUpperCase();
+        let v = el.value.replace(/[^0-9.kKmM,\.]/g, '').toUpperCase();
 
-    // 🔴 これを最優先にする
-    if (/[KM]$/.test(v)) {
-        el.value = v;
-        return;
-    }
+        if (/[KM]$/.test(v)) {
+            el.value = v;
+            return;
+        }
 
-    const raw = v.replace(/,/g, '');
+        const raw = v.replace(/,/g, '');
 
-    // 小数入力中（完全にK/Mなし）
-    if (raw.includes('.')) {
-        el.value = raw;
-        return;
-    }
+        if (raw.includes('.')) {
+            el.value = raw;
+            return;
+        }
 
-    const num = parseFloat(raw);
+        const num = parseFloat(raw);
 
-    if(!isNaN(num) && raw !== '') {
-        el.value = num.toLocaleString('ja-JP');
-    } else {
-        el.value = raw;
-    }
-};
+        if(!isNaN(num) && raw !== '') {
+            el.value = num.toLocaleString('ja-JP');
+        } else {
+            el.value = raw;
+        }
+    };
     
     const setNow = () => {
         const d = new Date();
