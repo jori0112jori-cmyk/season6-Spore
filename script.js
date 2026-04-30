@@ -115,24 +115,22 @@ const app = (() => {
         PROD_BASE: 720
     };
 
-    // ★ 実測値ベースのSR（不足率）ダメージテーブル
-    const SR_TABLE = [
-        { maxSR: 0,      dmg: 100 },
-        { maxSR: 0.0200, dmg:  80 },
-        { maxSR: 0.0393, dmg:  50 },
-        { maxSR: 0.0577, dmg:  20 },
-        { maxSR: 0.0755, dmg:  10 },
-        { maxSR: 0.0926, dmg:   7 },
-        { maxSR: 0.1091, dmg:   5 },
-        { maxSR: 0.1250, dmg:   3 },
-        { maxSR: 0.1404, dmg:   2 },
-        { maxSR: 0.1545, dmg:   1 },
-        { maxSR: 0.1680, dmg: 0.8 },
-        { maxSR: 0.1834, dmg: 0.6 },
-        { maxSR: 0.2000, dmg: 0.4 },
-        { maxSR: 0.2150, dmg: 0.2 },
-        { maxSR: 0.2250, dmg: 0.1 },
-        { maxSR: 1.0000, dmg: 0.1 }
+    const PENALTY_TABLE = [
+        { maxDiff: 0,    dmg: 100 }, 
+        { maxDiff: 250,  dmg:  80 }, 
+        { maxDiff: 500,  dmg:  50 }, 
+        { maxDiff: 750,  dmg:  20 }, 
+        { maxDiff: 1000, dmg:  10 }, 
+        { maxDiff: 1250, dmg:   7 }, 
+        { maxDiff: 1500, dmg:   5 }, 
+        { maxDiff: 1750, dmg:   3 }, 
+        { maxDiff: 2000, dmg:   2 }, 
+        { maxDiff: 2250, dmg:   1 }, 
+        { maxDiff: 2500, dmg: 0.8 }, 
+        { maxDiff: 2750, dmg: 0.6 }, 
+        { maxDiff: 3000, dmg: 0.4 }, 
+        { maxDiff: 3250, dmg: 0.2 }, 
+        { maxDiff: 99999, dmg: 0.1 } 
     ];
 
     let lang = 'ja';
@@ -162,7 +160,7 @@ const app = (() => {
             }, 50);
         } catch(err) {
             console.error("Init Error:", err);
-            alert("初期化エラーが発生しました。リセットボタンを押すか、キャッシュをクリアしてください。");
+            alert("初期化エラーが発生しました。");
         }
     };
 
@@ -240,12 +238,9 @@ const app = (() => {
             let val = parseInt(el.value || 1);
             val += delta;
             if(val < 1) val = 1;
-            
             let realMax = DATA.ENEMIES.findLastIndex(v => v > 0);
             if (realMax === -1) realMax = DATA.ENEMIES.length - 1;
-
             if(val > realMax) val = realMax;
-            
             el.value = val;
             calc(); 
             return;
@@ -259,7 +254,6 @@ const app = (() => {
         if(val < 0) val = 0;
         if(val > CONFIG.MAX_LV) val = CONFIG.MAX_LV;
 
-        // 目標Lvは現在Lv+1以上に制限
         if(type === 'tgt') {
             const cLv = parseInt(document.getElementById('lab-cur')?.value || 0);
             if(val <= cLv) val = cLv + 1;
@@ -267,7 +261,6 @@ const app = (() => {
         }
 
         el.value = val;
-        
         if(type === 'cur') onCurChange();
         else calc();
     };
@@ -275,11 +268,8 @@ const app = (() => {
     const toggleWeekly = () => {
         const isActive = $('weekly-active').checked;
         const sel = $('weekly-lv');
-        if (isActive) {
-            sel.classList.remove('disabled-item');
-        } else {
-            sel.classList.add('disabled-item');
-        }
+        if (isActive) sel.classList.remove('disabled-item');
+        else sel.classList.add('disabled-item');
         calc(true);
     };
 
@@ -384,9 +374,7 @@ const app = (() => {
         if(stockFocused) return;
         stockFocused = true;
         const raw = Number(el.dataset.raw || '0');
-        if(raw > 0) {
-            el.value = raw.toLocaleString('ja-JP');
-        }
+        if(raw > 0) el.value = raw.toLocaleString('ja-JP');
         el.select();
     };
 
@@ -447,9 +435,7 @@ const app = (() => {
         
         const weeklyActive = $('weekly-active') ? $('weekly-active').checked : false;
         const weeklyLv = parseInt($('weekly-lv') ? $('weekly-lv').value : 0);
-        if (weeklyActive) {
-            hourlyProd += (weeklyLv * CONFIG.PROD_BASE);
-        }
+        if (weeklyActive) hourlyProd += (weeklyLv * CONFIG.PROD_BASE);
 
         if($('total-prod')) $('total-prod').innerHTML = fmtKM(hourlyProd, true) + '/h';
         if($('res-daily')) $('res-daily').innerHTML = fmtKM(hourlyProd * 24, true);
@@ -488,13 +474,12 @@ const app = (() => {
         const totalBonus = wBonus + activeBuff;
         const curVirusBase = DATA.VIRUS[cLv] || 0;
         const curVirusTotal = curVirusBase + totalBonus;
-        
         const tgtVirusBase = DATA.VIRUS[tLv] || 0;
         const tgtVirusTotal = tgtVirusBase + totalBonus;
 
         if($('res-virus')) $('res-virus').textContent = `${fmt(curVirusTotal)} → ${fmt(tgtVirusTotal)}`;
 
-        // ★討伐シミュレーション
+        // --- 討伐シミュレーション ---
         const skillBonus = skillActive ? 250 : 0;
         const battleVirusTotal = curVirusTotal + skillBonus;
 
@@ -503,75 +488,94 @@ const app = (() => {
 
         let maxWinLv = 0;
         let maxWinReq = 0;
-        
         for (let i = 1; i < DATA.ENEMIES.length; i++) {
             if (DATA.ENEMIES[i] === 0) break;
             if (DATA.ENEMIES[i] <= battleVirusTotal) {
                 maxWinLv = i;
                 maxWinReq = DATA.ENEMIES[i];
-            } else {
-                break;
-            }
+            } else { break; }
         }
         if ($('disp-max-win-lv')) $('disp-max-win-lv').textContent = maxWinLv;
         if ($('disp-max-win-res')) $('disp-max-win-res').textContent = fmt(maxWinReq);
 
         let enemyLv = parseInt($('enemy-lv').value || 1);
         const nextTargetLv = maxWinLv + 1;
-        
         let realMax = DATA.ENEMIES.findLastIndex(v => v > 0);
         if (realMax === -1) realMax = DATA.ENEMIES.length - 1;
-        
         const safeNextTarget = (nextTargetLv <= realMax) ? nextTargetLv : realMax;
 
         if (resetTarget || enemyLv <= maxWinLv) {
             enemyLv = safeNextTarget;
             $('enemy-lv').value = enemyLv;
         }
-        
         const enemyReq = DATA.ENEMIES[enemyLv] || 0;
         if($('disp-enemy-lv')) $('disp-enemy-lv').textContent = enemyLv;
         if($('disp-enemy-req')) $('disp-enemy-req').textContent = fmt(enemyReq);
 
-        // ★★★ ダメージ判定ロジック（修正部分）★★★
+        // ★★★ 与ダメージ減による色判定ロジック ★★★
         const battleStatus = $('battle-status');
         const battleDetail = $('battle-detail');
         const box = $('battle-result');
 
         if (box && battleDetail) {
+            // スタイルの初期化（勝ち負け切り替え時に色が残らないように）
+            box.style.backgroundColor = '';
+            box.style.borderColor = '';
+
             if (enemyReq === 0) {
                  if(battleStatus) battleStatus.textContent = "";
                  battleDetail.textContent = "";
                  box.className = "battle-result-box";
             } else if (battleVirusTotal >= enemyReq) {
+                // 超過時
                 if(battleStatus) battleStatus.textContent = ""; 
                 const txtOver = DATA.TEXT[lang].res_over;
                 battleDetail.innerHTML = `<span style="color:#2E7D32; font-weight:bold;">${txtOver}: +${fmt(battleVirusTotal - enemyReq)}</span>`;
                 box.className = "battle-result-box win";
             } else {
+                // 不足時
                 if(battleStatus) battleStatus.textContent = "";
                 const diff = enemyReq - battleVirusTotal;
-                const sr = diff / enemyReq; // 不足率の算出
 
-                // 実測値ベースのSR_TABLEと照合
                 let damageRate = 0.1;
-                for (let i = 0; i < SR_TABLE.length; i++) {
-                    if (sr <= SR_TABLE[i].maxSR) {
-                        damageRate = SR_TABLE[i].dmg;
+                for (let i = 0; i < PENALTY_TABLE.length; i++) {
+                    if (diff <= PENALTY_TABLE[i].maxDiff) {
+                        damageRate = PENALTY_TABLE[i].dmg;
                         break;
                     }
                 }
 
-                // ゲーム内表示用のペナルティ幅（浮動小数点の計算誤差を修正）
                 const displayPenalty = parseFloat((100 - damageRate).toFixed(1));
+
+                // --- 色判定ロジック ---
+                let bgColor = "#FFFFFF"; 
+                let textColor = "#C62828"; 
+
+                if (damageRate >= 80) {
+                    bgColor = "#FFF9C4"; // 黄色（注意：与ダメ80%以上）
+                    textColor = "#F57F17"; 
+                } else if (damageRate >= 50) {
+                    bgColor = "#FFE0B2"; // 薄い赤（警告：与ダメ50%)
+                    textColor = "#E65100";
+                } else if (damageRate >= 20) {
+                    bgColor = "#FFEBEE"; // 薄い赤（警告：与ダメ20%）
+                    textColor = "#D32F2F";
+                } else {
+                    bgColor = "#FFCDD2"; // 濃い赤（危険：与ダメ20%未満）
+                    textColor = "#B71C1C";
+                }
+
+                box.style.backgroundColor = bgColor;
+                box.style.borderColor = textColor;
+                // ---------------------
 
                 const txtShort = DATA.TEXT[lang].res_short;
                 const txtDmg = DATA.TEXT[lang].res_dmg;
                 const txtPena = DATA.TEXT[lang].res_pena;
 
                 battleDetail.innerHTML = `
-                    ${txtShort}: ${fmt(diff)}<br>
-                    <div style="margin-top:4px; font-weight:bold; color:#C62828;">
+                    <span style="color:#333;">${txtShort}: ${fmt(diff)}</span><br>
+                    <div style="margin-top:4px; font-weight:bold; color:${textColor};">
                         ${txtDmg}: ${damageRate}% (${txtPena}: -${displayPenalty}%)
                     </div>
                 `;
@@ -581,11 +585,7 @@ const app = (() => {
 
         const stock = parseStock($('stock')?.value || 0);
         let shortage = Math.max(0, realCost - stock);
-        
-        let safeShortage = 0;
-        if (shortage > 0) {
-            safeShortage = Math.ceil(shortage / 1000) * 1000;
-        }
+        let safeShortage = shortage > 0 ? Math.ceil(shortage / 1000) * 1000 : 0;
 
         if($('res-short')) $('res-short').innerHTML = fmtKM(safeShortage, true);
         updateStatus(safeShortage, hourlyProd);
@@ -595,11 +595,7 @@ const app = (() => {
         const card = $('breakdown-card');
         const table = $('breakdown-table');
         if(!card || !table) return;
-
-        if(rows.length <= 1) {
-            card.style.display = 'none';
-            return;
-        }
+        if(rows.length <= 1) { card.style.display = 'none'; return; }
         card.style.display = 'block';
 
         const stock = parseStock($('stock')?.value || 0);
@@ -614,38 +610,19 @@ const app = (() => {
         const hdrCumu = isJa ? '累計'   : 'Total';
         const hdrEta  = isJa ? '達成予測' : 'ETA';
 
-        let html = `<table class="breakdown-tbl">
-            <thead><tr>
-                <th>${hdrLv}</th>
-                <th>${hdrCost}</th>
-                <th>${hdrCumu}</th>
-                <th>${hdrEta}</th>
-            </tr></thead><tbody>`;
-
+        let html = `<table class="breakdown-tbl"><thead><tr><th>${hdrLv}</th><th>${hdrCost}</th><th>${hdrCumu}</th><th>${hdrEta}</th></tr></thead><tbody>`;
         rows.forEach(r => {
             const shortage = Math.max(0, r.cumulative - stock);
             let etaStr = '';
-            if(shortage <= 0) {
-                etaStr = isJa ? '達成済' : 'Done';
-            } else if(hourlyProd <= 0) {
-                etaStr = '---';
-            } else {
+            if(shortage <= 0) etaStr = isJa ? '達成済' : 'Done';
+            else if(hourlyProd <= 0) etaStr = '---';
+            else {
                 const mins = Math.ceil((shortage / hourlyProd) * 60);
                 const d = new Date(baseDate.getTime() + mins * 60000);
-                const dd = isJa
-                    ? `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${pz(d.getMinutes())}`
-                    : `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${pz(d.getMinutes())}`;
-                etaStr = dd;
+                etaStr = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${pz(d.getMinutes())}`;
             }
-            const doneClass = shortage <= 0 ? ' class="row-done"' : '';
-            html += `<tr${doneClass}>
-                <td class="bd-lv">${r.fromLv}→${r.toLv}</td>
-                <td class="bd-cost">${fmtKM(r.cost)}</td>
-                <td class="bd-cumu">${fmtKM(r.cumulative)}</td>
-                <td class="bd-eta">${etaStr}</td>
-            </tr>`;
+            html += `<tr${shortage <= 0 ? ' class="row-done"' : ''}><td class="bd-lv">${r.fromLv}→${r.toLv}</td><td class="bd-cost">${fmtKM(r.cost)}</td><td class="bd-cumu">${fmtKM(r.cumulative)}</td><td class="bd-eta">${etaStr}</td></tr>`;
         });
-
         html += '</tbody></table>';
         table.innerHTML = html;
     };
@@ -660,10 +637,7 @@ const app = (() => {
     };
 
     const updateStatus = (shortage, hourlyProd) => {
-        const elTime = $('res-time');
-        const elDate = $('res-date');
-        const elMsg = $('status-msg');
-        const elRemaining = $('res-remaining');
+        const elTime = $('res-time'), elDate = $('res-date'), elMsg = $('status-msg'), elRemaining = $('res-remaining');
         if(!elTime || !elDate || !elMsg) return;
 
         if(shortage <= 0) {
@@ -691,25 +665,17 @@ const app = (() => {
 
         if(elRemaining) {
             const totalMins = Math.ceil(hoursNeeded * 60);
-            const rDays  = Math.floor(totalMins / 1440);
-            const rHours = Math.floor((totalMins % 1440) / 60);
-            const rMins  = totalMins % 60;
-
+            const rDays = Math.floor(totalMins / 1440), rHours = Math.floor((totalMins % 1440) / 60), rMins = totalMins % 60;
             let parts = [];
-            if(rDays  > 0) parts.push(lang === 'ja' ? `${rDays}日`    : `${rDays}d`);
+            if(rDays > 0) parts.push(lang === 'ja' ? `${rDays}日` : `${rDays}d`);
             if(rHours > 0) parts.push(lang === 'ja' ? `${rHours}時間` : `${rHours}h`);
-            if(rMins  > 0 || parts.length === 0)
-                            parts.push(lang === 'ja' ? `${rMins}分`   : `${rMins}m`);
-
-            const prefix = lang === 'ja' ? 'あと' : 'in';
-            elRemaining.textContent = `${prefix} ${parts.join(' ')}`;
+            if(rMins > 0 || parts.length === 0) parts.push(lang === 'ja' ? `${rMins}分` : `${rMins}m`);
+            elRemaining.textContent = `${lang === 'ja' ? 'あと' : 'in'} ${parts.join(' ')}`;
         }
     };
 
     const setMsg = (msgEl, timeEl, msgKey, timeText, color) => {
-        if(DATA.TEXT[lang] && DATA.TEXT[lang][msgKey]) {
-            msgEl.textContent = DATA.TEXT[lang][msgKey];
-        }
+        if(DATA.TEXT[lang] && DATA.TEXT[lang][msgKey]) msgEl.textContent = DATA.TEXT[lang][msgKey];
         msgEl.style.color = color === "#BF360C" ? "#5D4037" : color; 
         timeEl.textContent = timeText;
         timeEl.style.color = color;
@@ -736,45 +702,25 @@ const app = (() => {
 
     const parseStock = v => {
         if(!v) return 0;
-        let s = v.toString().toLowerCase().replace(/,/g,'').trim();
-        s = s.replace(/[^0-9.km]/g, '');
+        let s = v.toString().toLowerCase().replace(/,/g,'').trim().replace(/[^0-9.km]/g, '');
         if(!s) return 0;
-
         let m = 1;
         if(s.endsWith('k')) { m=1000; s=s.slice(0,-1); }
         else if(s.endsWith('m')) { m=1000000; s=s.slice(0,-1); }
-
         const parsed = parseFloat(s);
-        if(isNaN(parsed) || parsed < 0) return 0;
-
-        return parsed * m;
+        return (isNaN(parsed) || parsed < 0) ? 0 : parsed * m;
     };
 
     const validateStock = () => {
         const el = document.getElementById('stock');
         if(!el) return;
-
         let v = el.value.replace(/[^0-9.kKmM,\.]/g, '').toUpperCase();
-
-        if (/[KM]$/.test(v)) {
-            el.value = v;
-            return;
-        }
-
+        if (/[KM]$/.test(v)) { el.value = v; return; }
         const raw = v.replace(/,/g, '');
-
-        if (raw.includes('.')) {
-            el.value = raw;
-            return;
-        }
-
+        if (raw.includes('.')) { el.value = raw; return; }
         const num = parseFloat(raw);
-
-        if(!isNaN(num) && raw !== '') {
-            el.value = num.toLocaleString('ja-JP');
-        } else {
-            el.value = raw;
-        }
+        if(!isNaN(num) && raw !== '') el.value = num.toLocaleString('ja-JP');
+        else el.value = raw;
     };
     
     const setNow = () => {
@@ -789,15 +735,11 @@ const app = (() => {
     const save = () => {
         const data = {
             fs: [1,2,3,4].map(i => { const e=$( `f${i}` ); return e?e.value:0; }),
-            wk: $('weekly-lv').value,
-            wa: $('weekly-active').checked,
-            lc: $('lab-cur').value,
-            lt: $('lab-tgt').value,
+            wk: $('weekly-lv').value, wa: $('weekly-active').checked,
+            lc: $('lab-cur').value, lt: $('lab-tgt').value,
             st: $('stock').dataset.raw || $('stock').value,
-            ds: $('discount').value,
-            bf: activeBuff,
-            elv: $('enemy-lv').value,
-            sa: skillActive
+            ds: $('discount').value, bf: activeBuff,
+            elv: $('enemy-lv').value, sa: skillActive
         };
         localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(data));
         alert(lang === 'ja' ? '保存しました' : 'Saved');
@@ -807,60 +749,30 @@ const app = (() => {
         const raw = localStorage.getItem(CONFIG.SAVE_KEY);
         if(!raw) return;
         let d;
-        try {
-            d = JSON.parse(raw);
-        } catch(e) {
-            console.warn('保存データの読み込みに失敗しました。データをリセットします。', e);
-            localStorage.removeItem(CONFIG.SAVE_KEY);
-            return;
-        }
+        try { d = JSON.parse(raw); } catch(e) { localStorage.removeItem(CONFIG.SAVE_KEY); return; }
         if(d.fs) d.fs.forEach((v,i) => { if($(`f${i+1}`)) $(`f${i+1}`).value = v; });
         if(d.wk) $('weekly-lv').value = d.wk;
-        if(d.wa !== undefined) {
-            $('weekly-active').checked = d.wa;
-        } else {
-            $('weekly-active').checked = true;
-        }
+        if(d.wa !== undefined) $('weekly-active').checked = d.wa;
         toggleWeekly();
-
         if(d.lc) $('lab-cur').value = d.lc;
         if(d.lt) $('lab-tgt').value = d.lt;
-        if(d.st) {
-            const stockEl = $('stock');
-            if(stockEl) {
-                stockEl.value = d.st;
-                formatStockDisplay(stockEl);
-            }
-        }
-        if(d.ds) {
-            $('discount').value = d.ds;
-            if($('disp-disc')) $('disp-disc').textContent = parseFloat(d.ds).toFixed(1);
-        }
+        if(d.st) { const stockEl = $('stock'); if(stockEl) { stockEl.value = d.st; formatStockDisplay(stockEl); } }
+        if(d.ds) { $('discount').value = d.ds; if($('disp-disc')) $('disp-disc').textContent = parseFloat(d.ds).toFixed(1); }
         if(d.bf) {
             activeBuff = parseInt(d.bf);
-            const btn250 = $('btn-buff-250');
-            const btn500 = $('btn-buff-500');
+            const btn250 = $('btn-buff-250'), btn500 = $('btn-buff-500');
             if(activeBuff === 250 && btn250) btn250.classList.add('active');
             if(activeBuff === 500 && btn500) btn500.classList.add('active');
         }
         if(d.elv) $('enemy-lv').value = d.elv;
-        
         if(d.sa !== undefined) {
             skillActive = d.sa;
             const btn = $('btn-skill');
-            if(btn) {
-                if(skillActive) btn.classList.add('active');
-                else btn.classList.remove('active');
-            }
+            if(btn) skillActive ? btn.classList.add('active') : btn.classList.remove('active');
         }
     };
 
-    const reset = () => {
-        if(confirm('設定をリセットしますか？\n(OK=通常リセット / キャンセル=中断)')) { 
-            localStorage.removeItem(CONFIG.SAVE_KEY); 
-            location.reload(); 
-        }
-    };
+    const reset = () => { if(confirm('設定をリセットしますか？')) { localStorage.removeItem(CONFIG.SAVE_KEY); location.reload(); } };
 
     const setLang = (l) => {
         lang = l;
@@ -874,8 +786,7 @@ const app = (() => {
     };
 
     const toggleAdmin = () => {
-        const p = $('admin-panel');
-        if(!p) return;
+        const p = $('admin-panel'); if(!p) return;
         p.style.display = (p.style.display === 'none') ? 'block' : 'none';
         if(p.style.display === 'block') {
             if($('admin-costs')) $('admin-costs').value = DATA.COSTS.join(', ');
@@ -888,19 +799,11 @@ const app = (() => {
             const newCosts = $('admin-costs').value.split(',').map(s => parseInt(s.trim()) || 0);
             const newVirus = $('admin-virus').value.split(',').map(s => parseInt(s.trim()) || 0);
             const newEnemies = $('admin-enemies').value.split(',').map(s => parseInt(s.trim()) || 0);
-            
-            const customData = { COSTS: newCosts, VIRUS: newVirus, ENEMIES: newEnemies };
-            localStorage.setItem(CONFIG.DATA_KEY, JSON.stringify(customData));
-            alert('Updated. Reloading...');
+            localStorage.setItem(CONFIG.DATA_KEY, JSON.stringify({ COSTS: newCosts, VIRUS: newVirus, ENEMIES: newEnemies }));
             location.reload();
         } catch(e) { alert('Error'); }
     };
-    const resetAdmin = () => {
-        if(confirm('Reset Master Data?')) {
-            localStorage.removeItem(CONFIG.DATA_KEY);
-            location.reload();
-        }
-    };
+    const resetAdmin = () => { if(confirm('Reset Master Data?')) { localStorage.removeItem(CONFIG.DATA_KEY); location.reload(); } };
     
     window.app = { 
         init, calc, save, reset, setLang, setNow, onCurChange, 
@@ -908,7 +811,6 @@ const app = (() => {
         toggleBuffBtn, step, toggleWeekly, switchTab, toggleSkill, addUnit, backspace, validateStock, focusStock, blurStock, formatStockDisplay,
         toggleBreakdown
     };
-    
     return window.app;
 })();
 
