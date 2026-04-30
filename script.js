@@ -26,6 +26,8 @@ const DEFAULT_DATA = {
             lbl_next_target: "次の目標 (NEXT TARGET)",
             lbl_req_res: "必要耐性",
             lbl_skill: "戦術スキル: 悪魔狩・怪物殺し +250",
+            lbl_kino: "キノキノ守れ +250",
+            lbl_guardian: "守護者集結 +250",
             lbl_max_win: "討伐可能ライン (最大)",
             lbl_bonus: "強化設定 (Buff & Skill)",
             lbl_indiv_check: "終末精鋭Lv & 必要耐性 (個別判定)",
@@ -72,6 +74,8 @@ const DEFAULT_DATA = {
             lbl_enemy_lv: "Doom Elite Lv",
             lbl_req_res: "Req Res",
             lbl_skill: "Tactical Skill: Monster Slayer +250",
+            lbl_kino: "Kino Protect +250",
+            lbl_guardian: "Guardian Rally +250",
             lbl_max_win: "Max Defeatable Limit",
             lbl_bonus: "Bonus Settings (Buff & Skill)",
             lbl_indiv_check: "Enemy Lv & Req Res (Individual)",
@@ -135,7 +139,9 @@ const app = (() => {
 
     let lang = 'ja';
     let activeBuff = 0; 
-    let skillActive = false; 
+    let skillActive = false;
+    let kinoActive = false;
+    let guardianActive = false;
     let currentTab = 'main'; 
     
     const $ = id => document.getElementById(id);
@@ -300,6 +306,20 @@ const app = (() => {
             if (skillActive) btn.classList.add('active');
             else btn.classList.remove('active');
         }
+        calc(true);
+    };
+
+    const toggleKino = () => {
+        kinoActive = !kinoActive;
+        const btn = $('btn-kino');
+        if(btn) kinoActive ? btn.classList.add('active') : btn.classList.remove('active');
+        calc(true);
+    };
+
+    const toggleGuardian = () => {
+        guardianActive = !guardianActive;
+        const btn = $('btn-guardian');
+        if(btn) guardianActive ? btn.classList.add('active') : btn.classList.remove('active');
         calc(true);
     };
 
@@ -481,7 +501,9 @@ const app = (() => {
 
         // --- 討伐シミュレーション ---
         const skillBonus = skillActive ? 250 : 0;
-        const battleVirusTotal = curVirusTotal + skillBonus;
+        const kinoBonus = kinoActive ? 250 : 0;
+        const guardianBonus = guardianActive ? 250 : 0;
+        const battleVirusTotal = curVirusTotal + skillBonus + kinoBonus + guardianBonus;
 
         if($('disp-battle-my-lv')) $('disp-battle-my-lv').textContent = cLv;
         if($('disp-battle-my-res')) $('disp-battle-my-res').textContent = fmt(battleVirusTotal);
@@ -739,7 +761,7 @@ const app = (() => {
             lc: $('lab-cur').value, lt: $('lab-tgt').value,
             st: $('stock').dataset.raw || $('stock').value,
             ds: $('discount').value, bf: activeBuff,
-            elv: $('enemy-lv').value, sa: skillActive
+            elv: $('enemy-lv').value, sa: skillActive, ki: kinoActive, ga: guardianActive
         };
         localStorage.setItem(CONFIG.SAVE_KEY, JSON.stringify(data));
         alert(lang === 'ja' ? '保存しました' : 'Saved');
@@ -769,6 +791,16 @@ const app = (() => {
             skillActive = d.sa;
             const btn = $('btn-skill');
             if(btn) skillActive ? btn.classList.add('active') : btn.classList.remove('active');
+        }
+        if(d.ki !== undefined) {
+            kinoActive = d.ki;
+            const btn = $('btn-kino');
+            if(btn) kinoActive ? btn.classList.add('active') : btn.classList.remove('active');
+        }
+        if(d.ga !== undefined) {
+            guardianActive = d.ga;
+            const btn = $('btn-guardian');
+            if(btn) guardianActive ? btn.classList.add('active') : btn.classList.remove('active');
         }
     };
 
@@ -808,7 +840,7 @@ const app = (() => {
     window.app = { 
         init, calc, save, reset, setLang, setNow, onCurChange, 
         toggleAdmin, saveAdmin, resetAdmin, 
-        toggleBuffBtn, step, toggleWeekly, switchTab, toggleSkill, addUnit, backspace, validateStock, focusStock, blurStock, formatStockDisplay,
+        toggleBuffBtn, step, toggleWeekly, switchTab, toggleSkill, toggleKino, toggleGuardian, addUnit, backspace, validateStock, focusStock, blurStock, formatStockDisplay,
         toggleBreakdown
     };
     return window.app;
