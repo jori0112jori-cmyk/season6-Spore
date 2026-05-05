@@ -344,23 +344,80 @@ const app = (() => {
 
     const renderAllLvTable = (battleVirusTotal) => {
         const tbody = $('all-lv-tbody'); if (!tbody) return;
-        let totalPow = 0; for (let i = 1; i <= 5; i++) totalPow += parseFloat($(`alv-pow-${i}`)?.value || 0);
+
+        // 参加部隊の戦力・人数を集計（最大5部隊）
+        const MAX_SQUADS = 5;
+        let totalPow = 0, squadCount = 0;
+        for (let i = 1; i <= MAX_SQUADS; i++) {
+            const v = parseFloat($(`alv-pow-${i}`)?.value || 0);
+            if (v > 0) { totalPow += v; squadCount++; }
+        }
+        const canAdd      = MAX_SQUADS - squadCount;          // あと何人追加できるか
+        const perSquadPow = squadCount > 0 ? totalPow / squadCount : 0; // 1部隊あたり平均戦力
+
         let html = '', prevDmg = null, visibleCount = 0;
+
         for (let lv = 1; lv <= 60; lv++) {
             const tRes = DATA.ENEMIES[lv]; if (!tRes || tRes <= battleVirusTotal) { prevDmg = 100; continue; }
             let dmg = 0.1; const diff = tRes - battleVirusTotal;
             for (const row of PENALTY_TABLE) { if (diff <= row.maxDiff) { dmg = row.dmg; break; } }
-            const effPow = totalPow * (dmg / 100);
+
+            const effPow      = totalPow * (dmg / 100);           // 現在の有効戦力
+            const perSquadEff = perSquadPow * (dmg / 100);        // 1部隊追加あたりの有効戦力増分
+            const isJa        = lang === 'ja';
+
+            // 追加が何人必要か（現在の平均戦力の部隊を追加した場合）
+            const needExtra = (effPow < 40 && perSquadEff > 0)
+                ? Math.ceil((40 - effPow) / perSquadEff) : 0;
+
+            // 段階境界に区切り線
             const divider = (prevDmg !== null && prevDmg !== 100 && dmg !== prevDmg) ? ' class="alv-divider"' : '';
             prevDmg = dmg;
-            const bg = effPow >= 40 ? 'background:#e8f5e9' : dmg >= 50 ? 'background:#fff8e1' : dmg >= 20 ? 'background:#fff3e0' : 'background:#ffebee';
+
+            // ── 5段階判定（残り枠を考慮）──────────────────
+            let bg, verdictHtml;
+            if (needExtra === 0) {
+                // 現在の編成で討伐可
+                bg = 'background:#e8f5e9';
+                verdictHtml = `<span style="color:#2e7d32;font-weight:700">✅ ${isJa?'討伐可':'OK'}</span>`;
+            } else if (needExtra <= canAdd && needExtra === 1) {
+                // 残り枠に収まり、あと1人
+                bg = 'background:#f1f8e9';
+                verdictHtml = `<span style="color:#558b2f;font-weight:700">🔶 ${isJa?'あと1人':'Need +1'}</span>`;
+            } else if (needExtra <= canAdd && needExtra === 2) {
+                // 残り枠に収まり、あと2人
+                bg = 'background:#fff8e1';
+                verdictHtml = `<span style="color:#e65100;font-weight:700">⚠️ ${isJa?'あと2人':'Need +2'}</span>`;
+            } else if (needExtra <= canAdd) {
+                // 残り枠に収まり、あと3〜4人
+                bg = 'background:#fff3e0';
+                verdictHtml = `<span style="color:#c62828;font-weight:700">⛔ ${isJa?`あと${needExtra}人`:`Need +${needExtra}`}</span>`;
+            } else {
+                // 残り枠を全部埋めても足りない（5人でも討伐不可）
+                bg = 'background:#ffebee';
+                verdictHtml = `<span style="color:#b71c1c;font-weight:700">❌ ${isJa?'5人でも困難':'Max 5 NG'}</span>`;
+            }
+
             const dmgColor = dmg >= 80 ? '#2e7d32' : dmg >= 50 ? '#e65100' : dmg >= 20 ? '#d32f2f' : '#b71c1c';
-            html += `<tr${divider} style="${bg}"><td style="text-align:center;font-weight:600">${lv}</td><td style="text-align:right">${tRes.toLocaleString()}</td><td style="text-align:right;color:#c62828">-${fmt(diff)}</td><td style="text-align:center;color:${dmgColor};font-weight:700">${dmg}%</td><td style="text-align:right;color:${effPow>=40?'#2e7d32':'#c62828'}">${effPow.toFixed(1)}M</td><td style="text-align:center;font-weight:700;color:${effPow>=40?'#2e7d32':'#c62828'}">${effPow>=40?(lang==='ja'?'✅ 可':'✅ OK'):(lang==='ja'?'❌ 否':'❌ NG')}</td></tr>`;
+            const effColor  = needExtra === 0 ? '#2e7d32' : needExtra <= canAdd ? '#e65100' : '#c62828';
+
+            html += `<tr${divider} style="${bg}">
+                <td style="text-align:center;font-weight:600">${lv}</td>
+                <td style="text-align:right">${tRes.toLocaleString()}</td>
+                <td style="text-align:right;color:#c62828">-${fmt(diff)}</td>
+                <td style="text-align:center;color:${dmgColor};font-weight:700">${dmg}%</td>
+                <td style="text-align:right;color:${effColor}">${effPow.toFixed(1)}M</td>
+                <td style="text-align:center">${verdictHtml}</td>
+            </tr>`;
             visibleCount++;
         }
-        tbody.innerHTML = visibleCount ? html : `<tr><td colspan="6" style="text-align:center;padding:16px;color:#2e7d32;font-weight:600;">🎉 ${lang==='ja'?'すべてのLvで耐性十分です':'All levels sufficient'}</td></tr>`;
+
+        tbody.innerHTML = visibleCount
+            ? html
+            : `<tr><td colspan="6" style="text-align:center;padding:16px;color:#2e7d32;font-weight:600;">🎉 ${lang==='ja'?'すべてのLvで耐性十分です':'All levels sufficient'}</td></tr>`;
+
         if($('alv-my-res-disp')) $('alv-my-res-disp').textContent = fmt(battleVirusTotal);
-        if($('alv-total-pow-disp')) $('alv-total-pow-disp').textContent = totalPow.toFixed(1) + 'M';
+        if($('alv-total-pow-disp')) $('alv-total-pow-disp').textContent = totalPow.toFixed(1) + `M (${squadCount}${lang==='ja'?'人':'ppl'})`;
     };
 
     const renderBreakdown = (rows, totalCost, hourlyProd) => {
