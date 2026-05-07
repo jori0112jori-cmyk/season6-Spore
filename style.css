@@ -280,18 +280,18 @@ input[type="checkbox"] {
 .val-res.buffed { color: var(--c-primary); }
 
 /* バフ選択 */
-.buff-group { display: flex; flex-wrap: wrap; gap: 10px; }
+.buff-group { display: flex; flex-wrap: wrap; gap: 7px; }
 
 .buff-chip {
-    flex: 1; min-width: 140px; padding: 16px 10px; background: #FFF;
-    border: 1px solid var(--c-border); border-radius: 30px; 
-    color: var(--c-text); font-weight: bold; font-size: 1.1rem;
+    flex: 1; min-width: 120px; padding: 9px 8px; background: #FFF;
+    border: 1px solid var(--c-border); border-radius: 20px; 
+    color: var(--c-text); font-weight: bold; font-size: 0.9rem;
     cursor: pointer; text-align: center; transition: all 0.2s; user-select: none;
     display: flex; justify-content: center; align-items: center;
 }
 
-#btn-buff-250 span, #btn-buff-500 span { font-size: 1.1rem; font-weight: 900; }
-#btn-skill span { font-size: 1.1rem; font-weight: bold; }
+#btn-buff-250 span, #btn-buff-500 span { font-size: 0.9rem; font-weight: 900; }
+#btn-skill span, #btn-kino span, #btn-guardian span { font-size: 0.9rem; font-weight: bold; }
 
 .buff-chip.active {
     background: #007AFF; border-color: #007AFF; color: #FFF;
@@ -325,7 +325,7 @@ input[type="checkbox"] {
 /* --- 強化設定エリア --- */
 .bonus-area {
     background: #F1F8E9; border: 1px solid #C5E1A5; border-radius: 8px;
-    padding: 15px; margin-bottom: 15px;
+    padding: 10px 12px; margin-bottom: 15px;
 }
 
 /* --- 討伐可能ライン表示ボックス --- */
@@ -457,31 +457,4 @@ input[type="checkbox"] {
     border-bottom: none;
     padding-bottom: 0;
     flex: none;
-}
-
-/* 強化設定・スキルセクションのコンテナ */
-.buff-group, .skill-group {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* 横に並べる */
-    gap: 6px; /* ボタン同士の間隔を狭く */
-    margin-bottom: 10px;
-}
-
-/* ボタン自体のサイズ調整 */
-.btn-buff, .btn-skill, .btn-action {
-    padding: 6px 4px !important; /* 上下左右の余白を削る */
-    font-size: 0.85rem !important; /* 文字を少し小さく */
-    min-height: auto !important;   /* 高さを抑える */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    line-height: 1.2;
-}
-
-/* アイコンがある場合の調整 */
-.btn-buff i, .btn-skill i {
-    margin-bottom: 0 !important;
-    margin-right: 4px;
-    font-size: 1rem;
 }

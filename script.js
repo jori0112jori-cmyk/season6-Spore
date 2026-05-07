@@ -336,6 +336,9 @@ const app = (() => {
             let dmg = 0.1; const diff = tRes - battleVirusTotal;
             for (const row of PENALTY_TABLE) { if (diff <= row.maxDiff) { dmg = row.dmg; break; } }
 
+            // 与ダメ1%未満は表示しない
+            if (dmg < 1) { prevDmg = dmg; continue; }
+
             const effPow = totalPow * (dmg / 100);
             const perSquadEff = perSquadPow * (dmg / 100);
             const isJa = lang === 'ja';
