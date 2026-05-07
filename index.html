@@ -199,10 +199,10 @@
                 
                 <div class="buff-group mb-md">
                     <div class="buff-chip" id="btn-buff-250" onclick="app.toggleBuffBtn(250)">
-                        <span>陣営階級バフ +250</span>
+                        <span>階級バフ +250</span>
                     </div>
                     <div class="buff-chip" id="btn-buff-500" onclick="app.toggleBuffBtn(500)">
-                        <span>陣営階級バフ +500</span>
+                        <span>階級バフ +500</span>
                     </div>
                 </div>
 
@@ -297,6 +297,13 @@
                     <span>🛡️ リーダー耐性: <strong id="alv-my-res-disp" style="color:#007AFF;">—</strong></span>
                     <span>⚔️ 合計戦力: <strong id="alv-total-pow-disp" style="color:#2e7d32;">—</strong></span>
                     <span style="color:#9ca3af;">耐性十分のLvは非表示 / 推奨戦力40M</span>
+                </div>
+                <!-- 適用中バフ -->
+                <div style="margin-top:8px; display:flex; flex-wrap:wrap; align-items:center; gap:6px;">
+                    <span style="font-size:12px; color:#777; white-space:nowrap;">✨ 適用中バフ:</span>
+                    <div id="alv-buff-tags" style="display:flex; flex-wrap:wrap; gap:5px; align-items:center;">
+                        <span style="color:#aaa;font-size:12px;">バフなし（基礎耐性のみ）</span>
+                    </div>
                 </div>
             </div>
             <!-- テーブル本体 -->

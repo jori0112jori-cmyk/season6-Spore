@@ -22,12 +22,12 @@ const DEFAULT_DATA = {
             lbl_cur_buffed: "現在のステータス (バフ込)",
             lbl_next_target: "次の目標 (NEXT TARGET)",
             lbl_req_res: "必要耐性",
-            lbl_skill: "戦術スキル: 悪魔狩・怪物殺し +250",
+            lbl_skill: "戦術スキル: 悪魔狩・怪物殺し",
             lbl_max_win: "討伐可能ライン (最大)",
             lbl_bonus: "強化設定 (Buff & Skill)",
             lbl_indiv_check: "終末精鋭Lv & 必要耐性 (個別判定)",
-            lbl_kino: "キノキノ守れ +250",
-            lbl_guardian: "守護者集結 +250",
+            lbl_kino: "キノキノ守れ",
+            lbl_guardian: "守護者集結",
             res_over: "超過",
             res_short: "不足",
             res_dmg: "ダメージ",
@@ -375,6 +375,28 @@ const app = (() => {
         tbody.innerHTML = visibleCount ? html : `<tr><td colspan="6" style="text-align:center;padding:16px;color:#2e7d32;font-weight:600;">🎉 ${lang==='ja'?'すべてのLvで耐性十分です':'All levels sufficient'}</td></tr>`;
         if($('alv-my-res-disp')) $('alv-my-res-disp').textContent = fmt(battleVirusTotal);
         if($('alv-total-pow-disp')) $('alv-total-pow-disp').textContent = totalPow.toFixed(1) + `M (${squadCount}${lang==='ja'?'人':'ppl'})`;
+
+        // ── 適用中バフの表示 ──
+        const buffArea = $('alv-buff-tags');
+        if (buffArea) {
+            const weeklyActive = $('weekly-active')?.checked;
+            const wBonus = (weeklyActive && parseInt($('weekly-lv')?.value || 0) >= 1) ? 250 : 0;
+            const tags = [];
+            if (wBonus)         tags.push({ label: `週間配達 +${wBonus}`, color: '#1565c0', bg: '#e3f2fd' });
+            if (activeBuff)     tags.push({ label: `階級バフ +${activeBuff}`, color: '#6a1b9a', bg: '#f3e5f5' });
+            if (skillActive)    tags.push({ label: '戦術スキル +250',   color: '#e65100', bg: '#fff3e0' });
+            if (kinoActive)     tags.push({ label: 'キノキノ守れ +250', color: '#2e7d32', bg: '#e8f5e9' });
+            if (guardianActive) tags.push({ label: '守護者集結 +250',   color: '#558b2f', bg: '#f1f8e9' });
+
+            if (tags.length === 0) {
+                buffArea.innerHTML = `<span style="color:#aaa;font-size:12px;">${lang==='ja'?'バフなし（基礎耐性のみ）':'No buffs active'}</span>`;
+            } else {
+                const totalBuff = wBonus + activeBuff + (skillActive?250:0) + (kinoActive?250:0) + (guardianActive?250:0);
+                buffArea.innerHTML = tags.map(t =>
+                    `<span style="display:inline-block;padding:2px 9px;border-radius:12px;font-size:12px;font-weight:700;color:${t.color};background:${t.bg};border:1px solid ${t.color}40;white-space:nowrap;">${t.label}</span>`
+                ).join('') + `<span style="font-size:12px;color:#555;font-weight:700;margin-left:4px;">= 合計 +${fmt(totalBuff)}</span>`;
+            }
+        }
     };
 
     const renderBreakdown = (rows, totalCost, hourlyProd) => {
