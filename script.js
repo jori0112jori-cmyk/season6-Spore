@@ -403,24 +403,189 @@ const app = (() => {
     };
 
     const renderBreakdown = (rows, totalCost, hourlyProd) => {
-        const card = $('breakdown-card'), table = $('breakdown-table');
-        if(!card || !table) return; if(rows.length <= 1) { card.style.display = 'none'; return; }
-        card.style.display = 'block';
-        const stock = parseStock($('stock')?.value || 0), nowRaw = $('now-time')?.value || '0:00';
-        const nowVal = nowRaw.split(':'), baseDate = new Date();
-        baseDate.setHours(parseInt(nowVal[0])||0, parseInt(nowVal[1])||0, 0, 0);
-        let html = `<table class="breakdown-tbl"><thead><tr><th>Lv</th><th>${DATA.TEXT[lang].r_cost}</th><th>累計</th><th>ETA</th></tr></thead><tbody>`;
-        rows.forEach(r => {
-            const short = Math.max(0, r.cumulative - stock);
-            let eta = short <= 0 ? (lang==='ja'?'達成済':'Done') : (hourlyProd <= 0 ? '---' : '');
-            if(!eta) {
-                const d = new Date(baseDate.getTime() + Math.ceil((short/hourlyProd)*60) * 60000);
-                eta = `${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${pz(d.getMinutes())}`;
-            }
-            html += `<tr${short <= 0 ? ' class="row-done"' : ''}><td class="bd-lv">${r.fromLv}→${r.toLv}</td><td class="bd-cost">${fmtKM(r.cost)}</td><td class="bd-cumu">${fmtKM(r.cumulative)}</td><td class="bd-eta">${eta}</td></tr>`;
-        });
-        table.innerHTML = html + '</tbody></table>';
-    };
+    const card = $('breakdown-card');
+    const table = $('breakdown-table');
+
+    if (!card || !table) return;
+
+    // 1段階だけなら非表示
+    if (rows.length <= 1) {
+        card.style.display = 'none';
+        return;
+    }
+
+    card.style.display = 'block';
+
+    // =========================
+    // 工場Lv取得
+    // =========================
+    const factoryLevels = [];
+
+    for (let i = 1; i <= 4; i++) {
+        factoryLevels.push(
+            parseInt($(`f${i}`)?.value || 0)
+        );
+    }
+
+    // =========================
+    // 週間配達
+    // =========================
+    const weeklyActive = $('weekly-active')?.checked;
+
+    const weeklyLv = parseInt(
+        $('weekly-lv')?.value || 0
+    );
+
+    // =========================
+    // 情報表示
+    // =========================
+    const factoryInfo = `
+        <div class="breakdown-meta">
+
+            <div class="meta-row">
+                <span class="meta-label">
+                    ${lang === 'ja' ? '工場Lv' : 'Factory'}
+                </span>
+
+                <span class="meta-value">
+                    Ⅰ:${factoryLevels[0]}
+                    /
+                    Ⅱ:${factoryLevels[1]}
+                    /
+                    Ⅲ:${factoryLevels[2]}
+                    /
+                    Ⅳ:${factoryLevels[3]}
+                </span>
+            </div>
+
+            <div class="meta-row">
+                <span class="meta-label">
+                    ${lang === 'ja' ? '週間配達' : 'Weekly'}
+                </span>
+
+                <span class="meta-value">
+                    ${
+                        weeklyActive
+                            ? `Lv.${weeklyLv}`
+                            : 'なし'
+                    }
+                </span>
+            </div>
+
+        </div>
+    
+        <div class="meta-row">
+            <span class="meta-label">
+                ${lang === 'ja' ? '消費減少率' : 'Discount'}
+            </span>
+
+            <span class="meta-value">
+                ${parseFloat($('discount')?.value || 0).toFixed(1)}%
+            </span>
+        </div>
+
+    </div>
+`;
+
+    // =========================
+    // ETA計算
+    // =========================
+    const stock = parseStock(
+        $('stock')?.value || 0
+    );
+
+    const nowRaw =
+        $('now-time')?.value || '0:00';
+
+    const nowVal = nowRaw.split(':');
+
+    const baseDate = new Date();
+
+    baseDate.setHours(
+        parseInt(nowVal[0]) || 0,
+        parseInt(nowVal[1]) || 0,
+        0,
+        0
+    );
+
+    // =========================
+    // テーブル生成
+    // =========================
+    let html = `
+        ${factoryInfo}
+
+        <table class="breakdown-tbl">
+
+            <thead>
+                <tr>
+                    <th>Lv</th>
+                    <th>${DATA.TEXT[lang].r_cost}</th>
+                    <th>${lang === 'ja' ? '累計' : 'Total'}</th>
+                    <th>ETA</th>
+                </tr>
+            </thead>
+
+            <tbody>
+    `;
+
+    rows.forEach(r => {
+
+        const short = Math.max(
+            0,
+            r.cumulative - stock
+        );
+
+        let eta =
+            short <= 0
+                ? (lang === 'ja' ? '達成済' : 'Done')
+                : (hourlyProd <= 0 ? '---' : '');
+
+        if (!eta) {
+
+            const d = new Date(
+                baseDate.getTime() +
+                Math.ceil(
+                    (short / hourlyProd) * 60
+                ) * 60000
+            );
+
+            eta =
+                `${d.getMonth() + 1}` +
+                `/${d.getDate()} ` +
+                `${d.getHours()}:` +
+                `${pz(d.getMinutes())}`;
+        }
+
+        html += `
+            <tr ${short <= 0 ? 'class="row-done"' : ''}>
+
+                <td class="bd-lv">
+                    ${r.fromLv}→${r.toLv}
+                </td>
+
+                <td class="bd-cost">
+                    ${fmtKM(r.cost)}
+                </td>
+
+                <td class="bd-cumu">
+                    ${fmtKM(r.cumulative)}
+                </td>
+
+                <td class="bd-eta">
+                    ${eta}
+                </td>
+
+            </tr>
+        `;
+    });
+
+    html += `
+            </tbody>
+        </table>
+    `;
+
+    table.innerHTML = html;
+};
 
     let breakdownOpen = false;
     const toggleBreakdown = () => { breakdownOpen = !breakdownOpen; $('breakdown-body').style.display = breakdownOpen ? 'block' : 'none'; $('breakdown-toggle-icon').textContent = breakdownOpen ? '▼' : '▶'; };

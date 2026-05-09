@@ -458,3 +458,64 @@ input[type="checkbox"] {
     padding-bottom: 0;
     flex: none;
 }
+
+/* =========================
+   Breakdown Meta Info
+   ========================= */
+
+.breakdown-meta {
+    margin-bottom: 12px;
+    padding: 10px 12px;
+
+    background: #F1F8E9;
+
+    border: 1px solid #C5E1A5;
+    border-radius: 8px;
+}
+
+.meta-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    line-height: 1.5;
+
+    flex-wrap: wrap;
+}
+
+.meta-row + .meta-row {
+    margin-top: 4px;
+}
+
+.meta-label {
+    min-width: 72px;
+
+    font-size: 0.8rem;
+    font-weight: 700;
+
+    color: #33691E;
+}
+
+.meta-value {
+    font-family: 'Roboto Mono', monospace;
+
+    font-size: 0.82rem;
+    font-weight: 700;
+
+    color: #1B5E20;
+
+    letter-spacing: 0.02em;
+}
+
+/* スマホ最適化 */
+@media (max-width: 480px) {
+
+    .meta-label {
+        min-width: 64px;
+        font-size: 0.75rem;
+    }
+
+    .meta-value {
+        font-size: 0.76rem;
+    }
+}
